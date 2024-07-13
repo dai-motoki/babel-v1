@@ -1,18 +1,38 @@
-version: '3'
+version: "3.9"
 
 services:
-  nextjs:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  backend:
+    build: ./backend
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
     ports:
-      - "3000:3000"
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - file-watcher
+    env_file:
+      .env
+  
+  frontend:
+    build: .
+    ports:
       - "3001:3001"
     volumes:
-      - .:/work
-      # - /app/node_modules
-      # - /app/.next
+      - .:/app
+      - /app/node_modules
+      - /app/.next
     environment:
       - NODE_ENV=development
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:8000
     command: npm run dev
     tty: true
+
+  file-watcher:
+    build: ./backend
+    command: python file_watcher.py
+    working_dir: /app/backend
+    volumes:
+      - .:/app
+    ports:
+      - "8001:8001"

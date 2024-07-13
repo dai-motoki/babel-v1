@@ -8,7 +8,8 @@ const App = () => {
     // アプリ一覧を取得する関数
     const fetchApps = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/generated-dirs');
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const response = await fetch(`${backendUrl}/api/generated-dirs`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

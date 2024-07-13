@@ -1,0 +1,19 @@
+# FastAPIとその依存関係
+fastapi
+uvicorn[standard]
+python-multipart
+watchdog
+
+# Anthropic
+anthropic
+
+# Google AI
+google-generativeai
+
+# OpenAI
+openai
+
+# その他
+python-dotenv
+pydantic
+aiofiles
