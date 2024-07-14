@@ -5,7 +5,8 @@ import { Gitgraph, Orientation } from "@gitgraph/react";
 import { useVersionControlData } from '../../hooks/useVersionControlData';
 import { withoutAuthor } from '../../utils/gitGraphTemplate';
 import { getDummyData } from '../../constants/dummyData';
-import { FileStructure } from './ForceGraphComponents';
+// import { FileStructure } from '.';
+import { FileStructure } from './components/FileStructure';
 import { useSearchParams } from 'next/navigation';
 
 

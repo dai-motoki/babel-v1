@@ -1,15 +1,4 @@
-import os
-import subprocess
-import datetime
 
-# Get current date and time
-current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
-# Define the script filename
-script_filename = f"{current_datetime}_file-splitting-script.py"
-
-# Define the content of the script
-script_content = '''
 import os
 import subprocess
 from typing import List, Dict
@@ -21,7 +10,7 @@ def create_directory(path: str) -> None:
 def write_file(path: str, content: str) -> None:
     """Write content to file, creating directories if needed."""
     create_directory(os.path.dirname(path))
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(content)
 
 def run_command(command: List[str]) -> str:
@@ -44,7 +33,7 @@ def split_files() -> None:
 
     # Define the new file structure
     new_files: Dict[str, str] = {
-        'components/FileStructure/index.tsx': '''
+        'components/FileStructure/index.tsx': """
 import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import ForceGraph from './ForceGraph';
@@ -292,8 +281,8 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 });
 
 export default FileStructure;
-''',
-        'components/FileStructure/ForceGraph.tsx': '''
+""",
+        'components/FileStructure/ForceGraph.tsx': """
 import React, { forwardRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 
@@ -302,8 +291,8 @@ const ForceGraph = forwardRef((props, ref) => {
 });
 
 export default ForceGraph;
-''',
-        'components/FileStructure/MockEditor.tsx': '''
+""",
+        'components/FileStructure/MockEditor.tsx': """
 import React, { useState, useEffect } from 'react';
 
 const MockEditor = ({ node, onClose }) => {
@@ -316,7 +305,7 @@ const MockEditor = ({ node, onClose }) => {
     setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
   };
 
-  const handleMouseMove = (e) => {
+const handleMouseMove = (e) => {
     if (isDragging) {
       setPosition({
         x: Math.max(0, Math.min(e.clientX - dragStart.x, window.innerWidth - 600)),
@@ -381,8 +370,8 @@ const MockEditor = ({ node, onClose }) => {
 };
 
 export default MockEditor;
-''',
-        'components/FileStructure/SearchBar.tsx': '''
+""",
+        'components/FileStructure/SearchBar.tsx': """
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -400,8 +389,8 @@ const SearchBar = ({ onSearch }) => {
 };
 
 export default SearchBar;
-''',
-        'components/FileStructure/RecentChanges.tsx': '''
+""",
+        'components/FileStructure/RecentChanges.tsx': """
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -423,8 +412,8 @@ const RecentChanges = ({ changes }) => {
 };
 
 export default RecentChanges;
-''',
-        'components/common/Button.tsx': '''
+""",
+        'components/common/Button.tsx': """
 import React from 'react';
 
 const Button = ({ onClick, children, className = '' }) => {
@@ -439,8 +428,8 @@ const Button = ({ onClick, children, className = '' }) => {
 };
 
 export default Button;
-''',
-        'hooks/useFileChanges.ts': '''
+""",
+        'hooks/useFileChanges.ts': """
 import { useState, useEffect } from 'react';
 
 const useFileChanges = () => {
@@ -467,8 +456,8 @@ const useFileChanges = () => {
 };
 
 export default useFileChanges;
-''',
-        'hooks/useForceGraph.ts': '''
+""",
+        'hooks/useForceGraph.ts': """
 import { useCallback, useMemo } from 'react';
 import { getNodeColor } from '../utils/colors';
 
@@ -498,8 +487,8 @@ const useForceGraph = (directoryStructure, selectedNodes, handleClick) => {
 };
 
 export default useForceGraph;
-''',
-        'utils/api.ts': '''
+""",
+        'utils/api.ts': """
 export const fetchDirectoryStructure = async (selectedSystem) => {
   // This is a mock implementation. In a real application, you would
   // make an API call to fetch the directory structure.
@@ -521,8 +510,8 @@ export const fetchDirectoryStructure = async (selectedSystem) => {
     }, 1000);
   });
 };
-''',
-        'utils/colors.ts': '''
+""",
+        'utils/colors.ts': """
 export const getNodeColor = (node) => {
   if (node.type === 'directory') {
     const specialDirectoryColors = {
@@ -584,8 +573,8 @@ export const getNodeColor = (node) => {
       return 'rgba(200, 200, 200, 0.8)';
   }
 };
-''',
-        'utils/transformApiResponse.ts': '''
+""",
+        'utils/transformApiResponse.ts': """
 export const transformApiResponse = (data) => {
   // This is a mock implementation. In a real application, you would
   // transform the API response to the format expected by react-force-graph.
@@ -601,8 +590,8 @@ export const transformApiResponse = (data) => {
     })),
   };
 };
-''',
-        'types/index.ts': '''
+""",
+        'types/index.ts': """
 export interface Node {
   id: string;
   name: string;
@@ -623,7 +612,7 @@ export interface FileChange {
   type: 'add' | 'modify' | 'delete';
   path: string;
 }
-'''
+"""
     }
 
     # Check if source file exists
@@ -650,12 +639,3 @@ export interface FileChange {
 
 if __name__ == '__main__':
     split_files()
-'''
-
-# Write the script to a file
-with open(script_filename, 'w') as f:
-    f.write(script_content)
-
-print(f"File splitting script has been created: {script_filename}")
-print("To run the script, use the following command:")
-print(f"python {script_filename}")
