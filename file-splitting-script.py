@@ -37,7 +37,7 @@ import { Inter } from 'next/font/google'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'バベルプロジェクト',
+  title: 'プロジェクトバベル',
   description: '言語を超え、文化をつなぐ。新たな世界の創造へ。',
 }
 
