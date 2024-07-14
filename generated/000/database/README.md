@@ -1,3 +1,3 @@
-# 0000 - database
+# 000 - database
 
 databaseディレクトリの概要と使用方法

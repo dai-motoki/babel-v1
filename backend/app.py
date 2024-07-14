@@ -346,7 +346,7 @@ async def get_directory_structure(path_type: str):
     elif path_type == "babel":
         base_path = "../src/components/generated/0710_babel"
     else:
-        base_path = "../src/components/generated/{}".format(path_type)
+        base_path = "../generated/{}".format(path_type)
         # raise HTTPException(status_code=400, detail="無効なpath_typeです")
 
     try:
@@ -398,7 +398,7 @@ def create_structure(path, base_path):
 
 @app.get("/api/generated-dirs")
 async def get_generated_dirs():
-    base_path = "../src/components/generated"
+    base_path = "../generated"
     logger.info(f"生成されたディレクトリの取得を開始します。ベースパス: {base_path}")
     try:
         structure = create_structure(base_path, base_path)
@@ -476,7 +476,7 @@ async def create_new_system(name: str):
     logger.info(f"新しいシステムの作成リクエストを受信: {name}")
     
     # ../components/generated/ 直下に新しいディレクトリを作成
-    new_dir_path = os.path.join("..", "src", "components", "generated", name)
+    new_dir_path = os.path.join("..", "generated", name)
     os.makedirs(new_dir_path, exist_ok=True)
     
     # 基本的なサブディレクトリを作成

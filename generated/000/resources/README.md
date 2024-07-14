@@ -1,3 +1,3 @@
-# 0000 - resources
+# 000 - resources
 
 resourcesディレクトリの概要と使用方法

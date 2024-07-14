@@ -18,7 +18,7 @@ class FileChangeHandler(FileSystemEventHandler):
 
 file_handler = FileChangeHandler()
 observer = Observer()
-observer.schedule(file_handler, path="../src/components/generated/", recursive=True)
+observer.schedule(file_handler, path="../generated/", recursive=True)
 observer.start()
 
 connected_clients = set()
