@@ -1,5 +1,0 @@
-# Gitで無視するファイルやディレクトリを指定
-.env
-__pycache__/
-*.pyc
-.vscode/

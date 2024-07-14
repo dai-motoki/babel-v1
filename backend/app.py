@@ -334,24 +334,22 @@ def create_structure(path, base_path):
                 "content": content
             })
     return structure
-
 @app.get("/directory_structure")
 async def get_directory_structure(path_type: str):
     if path_type == "file_explorer":
-        # base_path = "../src/components/generated/fileExplorer"
         base_path = "../src/components/generated/"
     elif path_type == "requirements_definition":
-        # base_path = "../src/components/generated/requirementsDefinition"
         base_path = "meta/1_domain_exp"
     elif path_type == "babel":
-        base_path = "../src/components/generated/0710_babel"
+        base_path = "../"
     else:
         base_path = "../generated/{}".format(path_type)
-        # raise HTTPException(status_code=400, detail="無効なpath_typeです")
 
     try:
-        structure = create_structure(base_path, base_path)
-        print(structure)
+        if path_type == "babel":
+            structure = create_structure_excluding_generated(base_path)
+        else:
+            structure = create_structure(base_path, base_path)
         logger.info(f"{path_type}のディレクトリ構造を正常に作成しました")
         return {"structure": structure}
     except Exception as e:
@@ -360,23 +358,36 @@ async def get_directory_structure(path_type: str):
 
 logger.info("アプリケーションが起動しました")
 
-
-
-import os
-
-# ... 既存のインポートと設定 ...
-
-def read_file_content(file_path):
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            return file.read()
-    except Exception as e:
-        logger.error(f"ファイル読み込み中にエラーが発生しました: {file_path}, エラー: {str(e)}")
-        return None
+def create_structure_excluding_generated(path):
+    structure = []
+    gitignore_patterns = read_gitignore(path)
+    for item in os.listdir(path):
+        if item == "generated" or item == ".git" or should_ignore(item, gitignore_patterns):
+            continue
+        item_path = os.path.join(path, item)
+        if os.path.isdir(item_path):
+            structure.append({
+                "name": item,
+                "type": "folder",
+                "path": item,
+                "children": create_structure(item_path, path)
+            })
+        else:
+            content = read_file_content(item_path)
+            structure.append({
+                "name": item,
+                "type": "file",
+                "path": item,
+                "content": content
+            })
+    return structure
 
 def create_structure(path, base_path):
     structure = []
+    gitignore_patterns = read_gitignore(base_path)
     for item in os.listdir(path):
+        if should_ignore(item, gitignore_patterns):
+            continue
         item_path = os.path.join(path, item)
         relative_path = os.path.relpath(item_path, base_path)
         if os.path.isdir(item_path):
@@ -395,6 +406,33 @@ def create_structure(path, base_path):
                 "content": content
             })
     return structure
+
+def read_gitignore(path):
+    gitignore_path = os.path.join(path, '.gitignore')
+    if os.path.exists(gitignore_path):
+        with open(gitignore_path, 'r') as f:
+            return [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    return []
+
+import fnmatch
+
+def should_ignore(item, gitignore_patterns):
+    return any(fnmatch.fnmatch(item, pattern) for pattern in gitignore_patterns)
+
+def read_file_content(file_path):
+    try:
+        # バイナリファイルや特殊なファイルを無視する
+        if os.path.splitext(file_path)[1] in ['.gz', '.woff2', '.ico']:
+            return None
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read()
+    except UnicodeDecodeError:
+        logger.warning(f"ファイルの読み込みをスキップしました（エンコーディングエラー）: {file_path}")
+        return None
+    except Exception as e:
+        logger.error(f"ファイル読み込み中にエラーが発生しました: {file_path}, エラー: {str(e)}")
+        return None
+
 
 @app.get("/api/generated-dirs")
 async def get_generated_dirs():
