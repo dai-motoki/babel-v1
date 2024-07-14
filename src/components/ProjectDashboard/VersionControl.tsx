@@ -51,11 +51,11 @@ const SystemDirectorySelector: React.FC<SystemDirectorySelectorProps> = ({ onSel
   const [selectedDirectory, setSelectedDirectory] = useState("");
   const { t } = useTranslation();
 
-  // babelオプションを追加
+  // babelオプションを追加し、システム名で昇順ソート
   const allOptions = [
     ...options,
     { value: "babel", label: "*babel", path: "/path/to/babel" }
-  ];
+  ].sort((a, b) => a.label.localeCompare(b.label));
 
   const handleSelectChange = (event) => {
     const value = event.target.value;
@@ -280,7 +280,7 @@ export function VersionControl() {
       
       {選択されたシステム ? (
         <>
-          <div className="relative h-[500px] mb-6">
+          <div className="relative h-screen w-full mb-6">
             <FileStructure 
               ファイル構造データ={ファイル構造データ} 
               onNodeClick={ノード選択処理} 
@@ -295,7 +295,7 @@ export function VersionControl() {
             )}
           </div>
 
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <label htmlFor="branch-select" className="block text-base font-medium text-[#e0e0e0] mb-2 font-sans">
               {t('ブランチ選択')}
             </label>
@@ -343,7 +343,7 @@ export function VersionControl() {
               <GitPullRequest className="mr-2 w-4 h-4" />
               <span className="text-base font-medium">{t('プルリクエスト')}</span>
             </Button>
-          </div>
+          </div> */}
         </>
       ) : (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">

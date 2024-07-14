@@ -244,8 +244,8 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
     onNodeClick: クリック処理,
     cooldownTicks: 1000,
     cooldownTime: 15000,
-    width: 1600,
-    height: 500,
+    width: 2000,
+    height: 1000,
   }), [ノード色取得, クリック処理, 選択中ノード, フィルター済みノード, フィルター済みリンク]);
 
   if (!選択されたシステム) {
