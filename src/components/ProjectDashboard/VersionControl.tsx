@@ -120,7 +120,7 @@ export function VersionControl() {
 
   const [選択中ノード, set選択中ノード] = useState(null);
   const [チャット位置, setチャット位置] = useState({ x: 0, y: 0 });
-  const [選択されたシステム, set選択されたシステム] = useState('');
+  const [selectedSystem , setselectedSystem ] = useState('');
   const [directoryOptions, setDirectoryOptions] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateSystemDialogOpen, setIsCreateSystemDialogOpen] = useState(false);
@@ -135,12 +135,12 @@ export function VersionControl() {
 
   const ディレクトリ選択処理 = (選択されたディレクトリ) => {
     console.log('選択されたディレクトリ:', 選択されたディレクトリ);
-    set選択されたシステム(選択されたディレクトリ.value);
+    setselectedSystem (選択されたディレクトリ.value);
   };
 
   const 新規システム作成処理 = async () => {
     console.log('新規システム作成処理');
-    set選択されたシステム('');
+    setselectedSystem ('');
     setIsCreateSystemDialogOpen(true);
 
     // システム名入力用のカードを表示
@@ -259,7 +259,7 @@ export function VersionControl() {
   useEffect(() => {
     const systemFromUrl = searchParams.get('system');
     if (systemFromUrl) {
-      set選択されたシステム(decodeURIComponent(systemFromUrl));
+      setselectedSystem (decodeURIComponent(systemFromUrl));
     }
   }, [searchParams]);
 
@@ -267,7 +267,7 @@ export function VersionControl() {
     <div className="min-h-screen bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] text-[#e0e0e0] p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-[#ffffff] font-sans mb-2 sm:mb-0">
-          {選択されたシステム ? 'システム名: '+選択されたシステム : t('システム一覧')}
+          {selectedSystem  ? 'システム名: '+selectedSystem  : t('システム一覧')}
         </h2>
         <div className="w-full sm:w-96">
           <SystemDirectorySelector 
@@ -278,13 +278,13 @@ export function VersionControl() {
         </div>
       </div>
       
-      {選択されたシステム ? (
+      {selectedSystem  ? (
         <>
           <div className="relative h-screen w-full mb-6">
             <FileStructure 
               ファイル構造データ={ファイル構造データ} 
               onNodeClick={ノード選択処理} 
-              選択されたシステム={選択されたシステム}
+              selectedSystem ={selectedSystem }
             />
             {選択中ノード && (
               <AIChat 

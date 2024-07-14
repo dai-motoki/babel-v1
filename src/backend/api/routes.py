@@ -62,7 +62,7 @@ async def create_new_system(name: str):
     logger.info(f"新しいシステムの作成リクエストを受信: {name}")
     
     # ../components/generated/ 直下に新しいディレクトリを作成
-    new_dir_path = os.path.join("..", "generated", name)
+    new_dir_path = os.path.join("..", "..", "generated", name)
     os.makedirs(new_dir_path, exist_ok=True)
     
     # 基本的なサブディレクトリを作成
