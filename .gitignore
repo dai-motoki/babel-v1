@@ -34,3 +34,106 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+# Python関連の無視すべきファイル
+
+# バイトコンパイルされたPythonファイル
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C拡張
+*.so
+
+# 配布/パッケージング
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstallerで生成されたファイル
+*.manifest
+*.spec
+
+# インストーラーログ
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 単体テスト/カバレッジレポート
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# 仮想環境
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyderプロジェクト設定
+.spyderproject
+.spyproject
+
+# Rope プロジェクト設定
+.ropeproject
+
+# mkdocs ドキュメント
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre型チェッカー
+.pyre/
+
+# pytype静的型アナライザー
+.pytype/
+
+# Cython デバッグシンボル
+cython_debug/
+# Pythonコンパイル済みファイルを無視
+*.pyc
+
+__pycache__
