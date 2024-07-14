@@ -51,9 +51,9 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
     if (ノード.type === 'directory') {
       const 特殊ディレクトリ色 = {
         'exe_history': 'rgba(255, 99, 71, 0.8)',  // トマト
-        'frontend': 'rgba(65, 105, 225, 0.8)',    // ロイヤルブルー
-        'backend': 'rgba(50, 205, 50, 0.8)',      // ライムグリーン
-        'middleware': 'rgba(255, 165, 0, 0.8)',   // オレンジ
+        'frontend': 'rgba(255, 165, 0, 0.8)',    // かなり明るいオレンジ
+        'backend': 'rgba(230, 130, 255, 0.8)',      // かなり明るい紫
+        'middleware': 'rgba(0, 255, 127, 0.8)',   // かなり明るい緑
         'docs': 'rgba(138, 43, 226, 0.8)',        // ブルーバイオレット
         'tests': 'rgba(255, 20, 147, 0.8)',       // ディープピンク
         'resources': 'rgba(0, 191, 255, 0.8)',    // ディープスカイブルー
@@ -68,10 +68,11 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
     switch (拡張子) {
       case 'js':
       case 'jsx':
-        return 'rgba(255, 220, 0, 0.8)'; // JavaScript
+        return 'rgba(255, 165, 0, 0.8)'; // JavaScript（オレンジ）
       case 'ts':
+        return 'rgba(255, 140, 0, 0.8)'; // TypeScript（ダークオレンジ）
       case 'tsx':
-        return 'rgba(0, 122, 204, 0.8)'; // TypeScript
+        return 'rgba(255, 69, 0, 0.8)'; // TypeScript React（レッドオレンジ）
       case 'css':
       case 'scss':
         return 'rgba(0, 220, 255, 0.8)'; // スタイルシート
@@ -82,7 +83,7 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
       case 'md':
         return 'rgba(100, 255, 100, 0.8)'; // Markdown
       case 'py':
-        return 'rgba(255, 59, 48, 0.8)'; // Python（赤系統に変更）
+        return 'rgba(230, 130, 255, 0.8)'; // Python（かなり明るい紫系統に変更）
       case 'rb':
         return 'rgba(255, 45, 85, 0.8)'; // Ruby（赤系統に変更）
       case 'php':
@@ -102,7 +103,7 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
       case 'yaml':
         return 'rgba(203, 23, 30, 0.8)'; // YAML
       case 'dockerfile':
-        return 'rgba(255, 36, 0, 0.8)'; // Dockerfile（赤系統に変更）
+        return 'rgba(0, 128, 0, 0.8)'; // Dockerfile（緑系統に変更）
       default:
         return 'rgba(200, 200, 200, 0.8)'; // その他
     }
@@ -197,7 +198,8 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
       ctx.fillStyle = ノード色取得(ノード);
       ctx.fill();
 
-      if (選択中ノード.some(n => n.id === ノード.id) || ノード.name === 'meta') {
+      // ディレクトリノードを常に光らせる
+      if (ノード.type === 'directory' || 選択中ノード.some(n => n.id === ノード.id) || ノード.name === 'meta') {
         const 基本発光半径 = ノード.type === 'directory' ? 8 : 6;
         const 時間 = performance.now() / 1000;
         const 発光半径 = 基本発光半径 + Math.sin(時間 * 1.5) * 2;
@@ -208,6 +210,10 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
             グラデーション.addColorStop(0, `rgba(255, 215, 0, ${0.8 + Math.sin(時間 * 1.5) * 0.2})`);
             グラデーション.addColorStop(0.5, `rgba(255, 215, 0, ${0.4 + Math.sin(時間 * 1.5) * 0.1})`);
             グラデーション.addColorStop(1, 'rgba(255, 215, 0, 0)');
+          } else if (ノード.type === 'directory') {
+            グラデーション.addColorStop(0, `rgba(0, 255, 255, ${0.8 + Math.sin(時間 * 1.5) * 0.2})`);
+            グラデーション.addColorStop(0.5, `rgba(0, 255, 255, ${0.4 + Math.sin(時間 * 1.5) * 0.1})`);
+            グラデーション.addColorStop(1, 'rgba(0, 255, 255, 0)');
           } else {
             グラデーション.addColorStop(0, `rgba(255, 255, 255, ${0.8 + Math.sin(時間 * 1.5) * 0.2})`);
             グラデーション.addColorStop(0.5, `rgba(255, 255, 255, ${0.4 + Math.sin(時間 * 1.5) * 0.1})`);
@@ -222,7 +228,7 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
         ctx.beginPath();
         const 円の半径 = ノード.type === 'directory' ? 6 : 4;
         ctx.arc(ノード.x, ノード.y, 円の半径, 0, 2 * Math.PI);
-        ctx.strokeStyle = ノード.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+        ctx.strokeStyle = ノード.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : ノード.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.8)';
         ctx.lineWidth = 2;
         ctx.stroke();
       }
