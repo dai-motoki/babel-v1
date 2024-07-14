@@ -5,7 +5,7 @@ import { ComponentType } from 'react'
 
 const componentMap: { [key: string]: () => Promise<{ default: ComponentType }> } = {
   ChatInterface: () => import('@/components/CollaborationHub/ChatInterface'),
-  VersionControl: () => import('@/components/ProjectDashboard/VersionControl'),
+  VersionControl: () => import('@/components/SystemEditor/VersionControl'),
   SaaSList: () => import('@/components/SaaSPackageManager/SaaSList'),
   PackageList: () => import('@/components/SaaSPackageManager/PackageList'),
   MonacoEditor: () => import('@/components/IDE/MonacoEditor'),

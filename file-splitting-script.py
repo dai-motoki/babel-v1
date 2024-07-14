@@ -100,7 +100,7 @@ const DynamicComponent = ({ componentName }: { componentName: string }) => {
       case 'ChatInterface':
         return import('./CollaborationHub/ChatInterface')
       case 'VersionControl':
-        return import('./ProjectDashboard/VersionControl')
+        return import('./SystemEditor/VersionControl')
       case 'SaaSList':
         return import('./SaaSPackageManager/SaaSList')
       case 'PackageList':
@@ -137,7 +137,7 @@ const ChatInterface = () => {
 
 export default ChatInterface
 ''',
-        'src/components/ProjectDashboard/VersionControl.tsx': '''
+        'src/components/SystemEditor/VersionControl.tsx': '''
 import React from 'react'
 
 const VersionControl = () => {
