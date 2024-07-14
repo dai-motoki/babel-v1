@@ -1,0 +1,151 @@
+import os
+import json
+import logging
+import aiofiles
+from fastapi import HTTPException
+import fnmatch
+
+logger = logging.getLogger(__name__)
+
+async def save_file(file_content):
+    logger.info(f"ファイル保存リクエストを受信: {file_content['filename']}")
+    try:
+        async with aiofiles.open(file_content['filename'], "w") as f:
+            await f.write(file_content['content'])
+        logger.info(f"ファイルの保存に成功: {file_content['filename']}")
+        return {"message": "ファイルが正常に保存されました"}
+    except Exception as e:
+        logger.error(f"ファイルの保存中にエラーが発生: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def load_file(filename: str):
+    logger.info(f"ファイル読み込みリクエストを受信: {filename}")
+    try:
+        async with aiofiles.open(filename, "r") as f:
+            content = await f.read()
+        logger.info(f"ファイルの読み込みに成功: {filename}")
+        return content
+    except FileNotFoundError:
+        logger.error(f"ファイルが見つかりません: {filename}")
+        raise HTTPException(status_code=404, detail="ファイルが見つかりません")
+    except Exception as e:
+        logger.error(f"ファイルの読み込み中にエラーが発生: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def get_generated_dirs():
+    base_path = "../../generated"
+    logger.info(f"生成されたディレクトリの取得を開始します。ベースパス: {base_path}")
+    try:
+        logger.debug("ディレクトリ構造の作成を開始します。")
+        gitignore_patterns = read_gitignore("../../.gitignore")
+        structure = create_structure(base_path, base_path, gitignore_patterns)
+        logger.debug(f"ディレクトリ構造を作成しました: {structure}")
+        
+        app_dirs = []
+        logger.debug("アプリディレクトリの検索を開始します。")
+        for item in structure:
+            logger.debug(f"項目を処理中: {item['name']}")
+            if item["type"] == "folder":
+                frontend_path = os.path.join(item["path"])
+                full_path = os.path.join(base_path, frontend_path)
+                logger.debug(f"フロントエンドパスを確認中: {full_path}")
+                
+                if os.path.exists(full_path):
+                    app_dir = {
+                        "name": item["name"],
+                        "path": f"../generated/{item['name']}/frontend/App"
+                    }
+                    app_dirs.append(app_dir)
+                    logger.debug(f"アプリディレクトリを追加しました: {app_dir}")
+                else:
+                    logger.debug(f"フロントエンドパスが存在しません: {full_path}")
+        
+        logger.info(f"生成されたディレクトリを正常に取得しました。総数: {len(app_dirs)}")
+        logger.debug(f"取得されたアプリディレクトリの詳細: {app_dirs}")
+        return app_dirs
+    except Exception as e:
+        logger.error(f"生成されたディレクトリの取得中にエラーが発生しました: {str(e)}", exc_info=True)
+        logger.debug(f"エラーの詳細情報: {e.__class__.__name__}")
+        raise HTTPException(status_code=500, detail="ディレクトリの取得に失敗しました")
+
+async def get_directory_structure(path_type: str):
+    if path_type == "file_explorer":
+        base_path = "../src/components/generated/"
+    elif path_type == "requirements_definition":
+        base_path = "meta/1_domain_exp"
+    elif path_type == "babel":
+        base_paths = ["../../src", "../../Dockerfile", "../../docker-compose.yml", "../../README.md"]
+    else:
+        base_path = "../../generated/{}".format(path_type)
+
+    try:
+        gitignore_patterns = read_gitignore("../../.gitignore")
+        if path_type == "babel":
+            structure = []
+            for base_path in base_paths:
+                if os.path.isfile(base_path):
+                    if not should_ignore(os.path.basename(base_path), gitignore_patterns):
+                        content = read_file_content(base_path)
+                        structure.append({
+                            "name": os.path.basename(base_path),
+                            "type": "file",
+                            "path": base_path,
+                        })
+                else:
+                    structure.extend(create_structure(base_path, base_path, gitignore_patterns))
+        else:
+            structure = create_structure(base_path, base_path, gitignore_patterns)
+        logger.info(f"{path_type}のディレクトリ構造を正常に作成しました")
+        return {"structure": structure}
+    except Exception as e:
+        logger.error(f"{path_type}のディレクトリ構造の取得中にエラーが発生しました: {str(e)}")
+        raise HTTPException(status_code=500, detail="ディレクトリ構造の取得に失敗しました")
+
+logger.info("アプリケーションが起動しました")
+
+def create_structure(path, base_path, gitignore_patterns):
+    structure = []
+    for item in os.listdir(path):
+        if should_ignore(item, gitignore_patterns):
+            continue
+        item_path = os.path.join(path, item)
+        relative_path = os.path.relpath(item_path, base_path)
+        if os.path.isdir(item_path):
+            structure.append({
+                "name": item,
+                "type": "folder",
+                "path": relative_path,
+                "children": create_structure(item_path, base_path, gitignore_patterns)
+            })
+        else:
+            content = read_file_content(item_path)
+            structure.append({
+                "name": item,
+                "type": "file",
+                "path": relative_path,
+            })
+    return structure
+
+def read_gitignore(path):
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    return []
+
+def should_ignore(item, gitignore_patterns):
+    if gitignore_patterns is None:
+        return False
+    return any(fnmatch.fnmatch(item, pattern) for pattern in gitignore_patterns)
+
+def read_file_content(file_path):
+    try:
+        if os.path.splitext(file_path)[1] in ['.gz', '.woff2', '.ico', '.pyc']:
+            return None
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read()
+    except UnicodeDecodeError:
+        logger.warning(f"ファイルの読み込みをスキップしました（エンコーディングエラー）: {file_path}")
+        return None
+    except Exception as e:
+        logger.error(f"ファイル読み込み中にエラーが発生しました: {file_path}, エラー: {str(e)}")
+        return None
