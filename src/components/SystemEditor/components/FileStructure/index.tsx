@@ -10,7 +10,7 @@ import useFileChanges from '../../hooks/useFileChanges';
 import useForceGraph from '../../hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
-import { getNodeColor } from '@/components/SystemEditor/utils/colors.ts';
+import { getNodeColor } from '@/utils/colors';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();

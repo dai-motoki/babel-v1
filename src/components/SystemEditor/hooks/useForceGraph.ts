@@ -1,6 +1,6 @@
 
 import { useCallback, useMemo } from 'react';
-import { getNodeColor } from '../utils/colors';
+import { getNodeColor } from '../../../utils/colors';
 
 const useForceGraph = (directoryStructure, selectedNodes, handleClick) => {
   const forceGraphConfig = useMemo(() => ({
