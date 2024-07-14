@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - .:/work
+      # - /app/node_modules
+      # - /app/.next
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    tty: true
