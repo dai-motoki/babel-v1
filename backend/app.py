@@ -341,13 +341,26 @@ async def get_directory_structure(path_type: str):
     elif path_type == "requirements_definition":
         base_path = "meta/1_domain_exp"
     elif path_type == "babel":
-        base_path = "../"
+        base_paths = ["../src", "../backend", "../Dockerfile", "../docker-compose.yml", "../README.md"]
     else:
         base_path = "../generated/{}".format(path_type)
 
     try:
         if path_type == "babel":
-            structure = create_structure_excluding_generated(base_path)
+            structure = []
+            for base_path in base_paths:
+                if os.path.isfile(base_path):
+                    # ファイルの場合、直接構造を作成
+                    content = read_file_content(base_path)
+                    structure.append({
+                        "name": os.path.basename(base_path),
+                        "type": "file",
+                        "path": base_path,
+                        "content": content
+                    })
+                else:
+                    # ディレクトリの場合、既存の関数を使用
+                    structure.extend(create_structure_excluding_generated(base_path))
         else:
             structure = create_structure(base_path, base_path)
         logger.info(f"{path_type}のディレクトリ構造を正常に作成しました")

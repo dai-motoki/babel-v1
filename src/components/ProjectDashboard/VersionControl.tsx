@@ -51,10 +51,16 @@ const SystemDirectorySelector: React.FC<SystemDirectorySelectorProps> = ({ onSel
   const [selectedDirectory, setSelectedDirectory] = useState("");
   const { t } = useTranslation();
 
+  // babelオプションを追加
+  const allOptions = [
+    ...options,
+    { value: "babel", label: "*babel", path: "/path/to/babel" }
+  ];
+
   const handleSelectChange = (event) => {
     const value = event.target.value;
     setSelectedDirectory(value);
-    const selectedOption = options.find(option => option.value === value);
+    const selectedOption = allOptions.find(option => option.value === value);
     if (selectedOption) {
       onSelectDirectory(selectedOption);
     }
@@ -68,7 +74,7 @@ const SystemDirectorySelector: React.FC<SystemDirectorySelectorProps> = ({ onSel
         className="w-full min-w-[200px] pl-4 pr-10 py-2 text-lg bg-[#3c3c3c] border-2 border-[#007acc] focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:border-[#007acc] rounded-lg font-sans text-[#ffffff] transition duration-300 ease-in-out mr-4"
       >
         <option value="">{t('システムを選択')}</option>
-        {options.map(option => (
+        {allOptions.map(option => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
