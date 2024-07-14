@@ -172,6 +172,15 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
     }
   }, [ディレクトリ構造]);
 
+  const 全体表示 = useCallback(() => {
+    setフィルター済みノード(ディレクトリ構造.nodes);
+    setフィルター済みリンク(ディレクトリ構造.links);
+    set検索クエリ('');
+    if (fgRef.current) {
+      fgRef.current.zoomToFit(400);
+    }
+  }, [ディレクトリ構造]);
+
   const フォースグラフ設定 = useMemo(() => ({
     graphData: { nodes: フィルター済みノード, links: フィルター済みリンク },
     nodeLabel: "name",
@@ -236,7 +245,7 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
     cooldownTicks: 1000,
     cooldownTime: 15000,
     width: 1600,
-    height: 600,
+    height: 500,
   }), [ノード色取得, クリック処理, 選択中ノード, フィルター済みノード, フィルター済みリンク]);
 
   if (!選択されたシステム) {
@@ -252,8 +261,8 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
   }
 
   return (
-    <div className="h-[600px] border border-[#3c3c3c] rounded-md overflow-hidden bg-[#1e1e1e]">
-      <div className="flex items-center justify-between mb-3 p-3">
+    <div className="h-full border border-[#3c3c3c] rounded-md overflow-hidden bg-[#1e1e1e] flex flex-col">
+      <div className="flex items-center justify-between p-3">
         <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('プロジェクト構造')}</h3>
         <div className="flex space-x-2">
           <input
@@ -263,6 +272,12 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
             placeholder={t('ファイル名を検索')}
             className="px-3 py-1 text-sm rounded-md bg-[#2a2a2a] text-[#d4d4d4] border border-[#3c3c3c] focus:outline-none focus:border-[#6c6c6c]"
           />
+          <button
+            onClick={全体表示}
+            className="px-3 py-1 text-sm rounded-md bg-[#4a4a4a] text-white hover:bg-[#5a5a5a] transition-colors"
+          >
+            {t('全体表示')}
+          </button>
           {['ファイルツリー', 'ビジネス構造', '依存関係', 'データ構造', '類似性', '免疫システム', 'マルチメディア'].map((構造) => (
             <button
               key={構造}
@@ -276,10 +291,12 @@ export const FileStructure = React.memo(({ onNodeClick, 選択されたシステ
           ))}
         </div>
       </div>
-      <ForceGraph2D
-        ref={fgRef}
-        {...フォースグラフ設定}
-      />
+      <div className="flex-grow">
+        <ForceGraph2D
+          ref={fgRef}
+          {...フォースグラフ設定}
+        />
+      </div>
       <div className="p-3 text-[#d4d4d4] max-h-[150px] overflow-y-auto">
         <h3 className="text-md font-medium mb-2">{t('最近の変更')}:</h3>
         <ul className="list-disc list-inside">

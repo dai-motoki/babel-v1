@@ -65,7 +65,7 @@ const SystemDirectorySelector: React.FC<SystemDirectorySelectorProps> = ({ onSel
       <select 
         onChange={handleSelectChange} 
         value={selectedDirectory}
-        className="w-full pl-4 pr-10 py-2 text-lg bg-[#3c3c3c] border-2 border-[#007acc] focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:border-[#007acc] rounded-lg font-sans text-[#ffffff] transition duration-300 ease-in-out mr-2"
+        className="w-full min-w-[200px] pl-4 pr-10 py-2 text-lg bg-[#3c3c3c] border-2 border-[#007acc] focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:border-[#007acc] rounded-lg font-sans text-[#ffffff] transition duration-300 ease-in-out mr-4"
       >
         <option value="">{t('システムを選択')}</option>
         {options.map(option => (
@@ -74,7 +74,7 @@ const SystemDirectorySelector: React.FC<SystemDirectorySelectorProps> = ({ onSel
       </select>
       <button
         onClick={onCreateNewSystem}
-        className="px-4 py-2 bg-gradient-to-r from-[#007acc] to-[#0056b3] text-[#ffffff] rounded-lg hover:from-[#0056b3] hover:to-[#003d82] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:ring-opacity-50"
+        className="px-6 py-2 bg-gradient-to-r from-[#007acc] to-[#0056b3] text-[#ffffff] rounded-lg hover:from-[#0056b3] hover:to-[#003d82] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:ring-opacity-50 whitespace-nowrap"
       >
         {t('新規作成')}
       </button>
@@ -258,12 +258,12 @@ export function VersionControl() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] text-[#e0e0e0] p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-[#ffffff] font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-[#2a2a2a] to-[#1e1e1e] text-[#e0e0e0] p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-[#ffffff] font-sans mb-2 sm:mb-0">
           {選択されたシステム ? 'システム名: '+選択されたシステム : t('システム一覧')}
         </h2>
-        <div className="w-64">
+        <div className="w-full sm:w-96">
           <SystemDirectorySelector 
             onSelectDirectory={ディレクトリ選択処理} 
             options={directoryOptions} 
@@ -274,7 +274,7 @@ export function VersionControl() {
       
       {選択されたシステム ? (
         <>
-          <div className="relative h-[600px] mb-8">
+          <div className="relative h-[500px] mb-6">
             <FileStructure 
               ファイル構造データ={ファイル構造データ} 
               onNodeClick={ノード選択処理} 
@@ -289,15 +289,15 @@ export function VersionControl() {
             )}
           </div>
 
-          <div className="mb-8">
-            <label htmlFor="branch-select" className="block text-lg font-medium text-[#e0e0e0] mb-3 font-sans">
+          <div className="mb-6">
+            <label htmlFor="branch-select" className="block text-base font-medium text-[#e0e0e0] mb-2 font-sans">
               {t('ブランチ選択')}
             </label>
             <select
               id="branch-select"
               value={選択中のブランチ}
               onChange={(e) => set選択中のブランチ(e.target.value)}
-              className="w-full pl-4 pr-10 py-3 text-lg bg-[#3c3c3c] border-2 border-[#007acc] focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:border-[#007acc] rounded-lg font-sans text-[#ffffff] transition duration-300 ease-in-out"
+              className="w-full pl-3 pr-8 py-2 text-base bg-[#3c3c3c] border-2 border-[#007acc] focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:border-[#007acc] rounded-lg font-sans text-[#ffffff] transition duration-300 ease-in-out"
             >
               {ブランチ.map((ブランチ名) => (
                 <option key={ブランチ名} value={ブランチ名}>{ブランチ名}</option>
@@ -307,15 +307,15 @@ export function VersionControl() {
 
           <GitGraph />
 
-          <div className="mt-10">
-            <h3 className="text-2xl font-bold mb-5 text-[#ffffff] font-sans">{t('最近のコミット')}</h3>
-            <div className="space-y-4">
+          <div className="mt-8">
+            <h3 className="text-xl font-bold mb-4 text-[#ffffff] font-sans">{t('最近のコミット')}</h3>
+            <div className="space-y-3">
               {コミット.map((コミット) => (
-                <div key={コミット.id} className="flex items-start p-5 bg-gradient-to-r from-[#2d2d2d] to-[#252525] rounded-lg border-l-4 border-[#007acc] shadow-md transition duration-300 ease-in-out hover:shadow-lg">
-                  <GitCommit className="text-[#007acc] mr-4 flex-shrink-0 w-6 h-6" />
+                <div key={コミット.id} className="flex items-start p-4 bg-gradient-to-r from-[#2d2d2d] to-[#252525] rounded-lg border-l-4 border-[#007acc] shadow-md transition duration-300 ease-in-out hover:shadow-lg">
+                  <GitCommit className="text-[#007acc] mr-3 flex-shrink-0 w-5 h-5" />
                   <div>
-                    <p className="font-bold text-lg text-[#ffffff] font-sans mb-1">{コミット.メッセージ}</p>
-                    <p className="text-sm text-[#b0b0b0] font-sans">
+                    <p className="font-bold text-base text-[#ffffff] font-sans mb-1">{コミット.メッセージ}</p>
+                    <p className="text-xs text-[#b0b0b0] font-sans">
                       {t('作成者')} <span className="text-[#007acc]">{コミット.作成者}</span> • {t('日付')} <span className="text-[#007acc]">{コミット.日付}</span>
                     </p>
                   </div>
@@ -324,28 +324,28 @@ export function VersionControl() {
             </div>
           </div>
 
-          <div className="mt-10 flex justify-between">
-            <Button className="flex items-center px-6 py-3 bg-gradient-to-r from-[#007acc] to-[#0056b3] text-[#ffffff] rounded-full hover:from-[#0056b3] hover:to-[#003d82] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:ring-opacity-50 shadow-lg">
-              <GitBranch className="mr-2 w-5 h-5" />
-              <span className="text-lg font-medium">{t('新規ブランチ')}</span>
+          <div className="mt-8 flex flex-wrap justify-between gap-4">
+            <Button className="flex items-center px-4 py-2 bg-gradient-to-r from-[#007acc] to-[#0056b3] text-[#ffffff] rounded-full hover:from-[#0056b3] hover:to-[#003d82] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:ring-opacity-50 shadow-lg">
+              <GitBranch className="mr-2 w-4 h-4" />
+              <span className="text-base font-medium">{t('新規ブランチ')}</span>
             </Button>
-            <Button className="flex items-center px-6 py-3 bg-gradient-to-r from-[#388e3c] to-[#2e7d32] text-[#ffffff] rounded-full hover:from-[#2e7d32] hover:to-[#1b5e20] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#388e3c] focus:ring-opacity-50 shadow-lg">
-              <GitMerge className="mr-2 w-5 h-5" />
-              <span className="text-lg font-medium">{t('マージ')}</span>
+            <Button className="flex items-center px-4 py-2 bg-gradient-to-r from-[#388e3c] to-[#2e7d32] text-[#ffffff] rounded-full hover:from-[#2e7d32] hover:to-[#1b5e20] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#388e3c] focus:ring-opacity-50 shadow-lg">
+              <GitMerge className="mr-2 w-4 h-4" />
+              <span className="text-base font-medium">{t('マージ')}</span>
             </Button>
-            <Button className="flex items-center px-6 py-3 bg-gradient-to-r from-[#0288d1] to-[#01579b] text-[#ffffff] rounded-full hover:from-[#01579b] hover:to-[#01426a] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#0288d1] focus:ring-opacity-50 shadow-lg">
-              <GitPullRequest className="mr-2 w-5 h-5" />
-              <span className="text-lg font-medium">{t('プルリクエスト')}</span>
+            <Button className="flex items-center px-4 py-2 bg-gradient-to-r from-[#0288d1] to-[#01579b] text-[#ffffff] rounded-full hover:from-[#01579b] hover:to-[#01426a] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#0288d1] focus:ring-opacity-50 shadow-lg">
+              <GitPullRequest className="mr-2 w-4 h-4" />
+              <span className="text-base font-medium">{t('プルリクエスト')}</span>
             </Button>
           </div>
         </>
       ) : (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
-          <p className="text-2xl font-bold text-[#ffffff] mb-4">{t('システムディレクトリを選択してください')}</p>
-          <p className="text-lg text-[#b0b0b0] mb-8">{t('または新しいシステムを作成してください')}</p>
+          <p className="text-xl font-bold text-[#ffffff] mb-3">{t('システムディレクトリを選択してください')}</p>
+          <p className="text-base text-[#b0b0b0] mb-6">{t('または新しいシステムを作成してください')}</p>
           <Button
             onClick={新規システム作成処理}
-            className="px-6 py-3 bg-gradient-to-r from-[#007acc] to-[#0056b3] text-[#ffffff] rounded-full hover:from-[#0056b3] hover:to-[#003d82] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:ring-opacity-50 shadow-lg"
+            className="px-5 py-2 bg-gradient-to-r from-[#007acc] to-[#0056b3] text-[#ffffff] rounded-full hover:from-[#0056b3] hover:to-[#003d82] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#007acc] focus:ring-opacity-50 shadow-lg"
           >
             {t('新規システム作成')}
           </Button>
