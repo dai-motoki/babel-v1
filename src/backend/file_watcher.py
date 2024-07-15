@@ -6,8 +6,18 @@ from watchdog.events import FileSystemEventHandler
 from fastapi import FastAPI, WebSocket, HTTPException, Body
 from fastapi.websockets import WebSocketDisconnect
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# CORSミドルウェアの設定
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # すべてのオリジンを許可（本番環境では適切に制限してください）
+    allow_credentials=True,
+    allow_methods=["*"],  # すべてのメソッドを許可
+    allow_headers=["*"],  # すべてのヘッダーを許可
+)
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -61,7 +71,7 @@ async def broadcast_changes():
             file_handler.changes.clear()
             for client in connected_clients:
                 await client.send_json(message)
-        await asyncio.sleep(1)  # 1秒間隔で変更を��ェック
+        await asyncio.sleep(1)  # 1秒間隔で変更をチェック
 
 @app.on_event("startup")
 async def startup_event():
@@ -71,17 +81,28 @@ async def startup_event():
 @app.post("/api/save-file")
 async def save_file(file_path: str = Body(...), content: str = Body(...)):
     try:
-        with open(file_path, 'w', encoding='utf-8') as file:
+        # 1つ上の階層をベースにしてファイルパスを構築
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        full_path = os.path.join(base_dir, file_path)
+        
+        # ファイルが指定されたディレクトリ内にあることを確認
+        if not os.path.abspath(full_path).startswith(base_dir):
+            raise HTTPException(status_code=400, detail="無効なファイルパスです")
+        
+        # ディレクトリが存在しない場合は作成
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        
+        with open(full_path, 'w', encoding='utf-8') as file:
             file.write(content)
         return JSONResponse(content={"message": "ファイルが正常に保存されました"}, status_code=200)
     except Exception as e:
+        logging.error(f"ファイルの保存中にエラーが発生しました: {str(e)}")
         raise HTTPException(status_code=500, detail=f"ファイルの保存中にエラーが発生しました: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
     logging.info("サーバーを起動しています...")
     uvicorn.run(app, host="0.0.0.0", port=8001, reload=True)
-
 
     # このスクリプトをコマンドラインで実行する方法：
     # 1. ターミナルを開き、このファイルがあるディレクトリに移動します。
@@ -90,6 +111,6 @@ if __name__ == "__main__":
     #
     # 注意事項：
     # - uvicornがインストールされていることを確認してください。
-    # - ホストを0.0.0.0に設定することで、ローカルネットワーク��の他のデバイスからもアクセス可能になります。
+    # - ホストを0.0.0.0に設定することで、ローカルネットワーク内の他のデバイスからもアクセス可能になります。
     # - ポート8001を使用していますが、必要に応じて変更可能です。
-    # - --reloadオプションを使用すること、コードの変更時に自動的にサーバーが再起動されます。
+    # - --reloadオプションを使用することで、コードの変更時に自動的にサーバーが再起動されます。

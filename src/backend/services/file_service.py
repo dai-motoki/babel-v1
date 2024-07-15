@@ -7,16 +7,25 @@ import fnmatch
 
 logger = logging.getLogger(__name__)
 
-async def save_file(file_content):
-    logger.info(f"ファイル保存リクエストを受信: {file_content['filename']}")
+async def save_file(file_data: dict):
+    logger.info(f"ファイル保存リクエストを受信: {file_data['file_path']}")
+    logger.debug(f"ファイル内容のサイズ: {len(file_data['content'])} バイト")
     try:
-        async with aiofiles.open(file_content['filename'], "w") as f:
-            await f.write(file_content['content'])
-        logger.info(f"ファイルの保存に成功: {file_content['filename']}")
+        logger.debug(f"ファイルを開いて書き込みを開始: {file_data['file_path']}")
+        async with aiofiles.open(file_data['file_path'], "w") as f:
+            await f.write(file_data['content'])
+        logger.info(f"ファイルの保存に成功: {file_data['file_path']}")
+        logger.debug(f"保存されたファイルのパス: {os.path.abspath(file_data['file_path'])}")
         return {"message": "ファイルが正常に保存されました"}
+    except IOError as io_err:
+        logger.error(f"ファイルの書き込み中にIOエラーが発生: {str(io_err)}")
+        logger.debug(f"IOエラーの詳細: {io_err.__class__.__name__}")
+        raise HTTPException(status_code=500, detail=f"ファイルの書き込みに失敗: {str(io_err)}")
     except Exception as e:
-        logger.error(f"ファイルの保存中にエラーが発生: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"ファイルの保存中に予期せぬエラーが発生: {str(e)}")
+        logger.debug(f"エラーの詳細: {e.__class__.__name__}")
+        logger.debug(f"エラーのトレースバック: ", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"予期せぬエラー: {str(e)}")
 
 async def load_file(filename: str):
     logger.info(f"ファイル読み込みリクエストを受信: {filename}")

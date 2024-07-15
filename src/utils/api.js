@@ -165,6 +165,7 @@ export const watchFileChanges = (callback) => {
 // ファイルの内容を保存する関数
 export const saveFileContent = async (filePath, content) => {
   try {
+    // const response = await fetch('http://localhost:8000/api/files/save_file', {
     const response = await fetch('http://localhost:8001/api/save-file', {
       method: 'POST',
       headers: {
