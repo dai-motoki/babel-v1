@@ -417,37 +417,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                   <Edit className="w-3 h-3 mr-2 text-green-200 opacity-50" />
                   <span>{t('選択をエディタ表示')}</span>
                 </Button>
-                <Button onClick={() => {
-                  handleSelectionAction('chat');
-                  // ダミーのチャットbotUIを表示する
-                  setShowChatUI(true);
-                }} className="text-xs flex items-center">
+                <Button onClick={() => handleSelectionAction('chat')} className="text-xs flex items-center">
                   <MessageCircle className="w-3 h-3 mr-2 text-red-200 opacity-50" />
                   <span>{t('会話する')}</span>
                 </Button>
-                {showChatUI && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-4 rounded-lg w-96">
-                      <h2 className="text-lg font-bold mb-4">チャットボット</h2>
-                      <div className="h-64 overflow-y-auto mb-4 bg-gray-100 p-2 rounded">
-                        {/* ここにチャットメッセージを表示 */}
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="メッセージを入力..."
-                        className="w-full p-2 border rounded"
-                      />
-                      <div className="flex justify-end mt-2">
-                        <button
-                          onClick={() => setShowChatUI(false)}
-                          className="bg-red-500 text-white px-4 py-2 rounded"
-                        >
-                          閉じる
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>
