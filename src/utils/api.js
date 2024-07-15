@@ -137,6 +137,31 @@ export const fetchFileContent = async (filePath) => {
   }
 };
 
+// WebSocketを使用してファイル変更を監視する関数
+export const watchFileChanges = (callback) => {
+  // WebSocketの接続を確立
+  const ws = new WebSocket('ws://localhost:8001/ws');
+  
+  // メッセージを受信したときの処理
+  ws.onmessage = (event) => {
+    // 受信したデータをJSONとしてパース
+    const data = JSON.parse(event.data);
+    // コールバック関数を呼び出し、変更内容を渡す
+    callback(data.changes);
+  };
+
+  // エラーが発生したときの処理
+  ws.onerror = (error) => {
+    console.error('WebSocket接続エラー:', error);
+  };
+
+  // クリーンアップ関数を返す
+  return () => {
+    // WebSocket接続を閉じる
+    ws.close();
+  };
+};
+
 export default {
   get,
   post,
@@ -149,5 +174,6 @@ export default {
   uploadFile,
   sendChatMessage,
   fetchDirectoryStructure,
-  fetchFileContent
+  fetchFileContent,
+  watchFileChanges
 };
