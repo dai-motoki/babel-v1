@@ -38,14 +38,19 @@ const MockEditor = ({ node, onClose }) => {
 
   useEffect(() => {
     const loadFileContent = async () => {
+      console.log('ファイル内容の読み込みを開始します');
       try {
         setIsLoading(true);
-        const content = await fetchFileContent(node.path);
+        console.log(`ファイルパス: ${node}`);
+        const content = await fetchFileContent(node.id);
+        console.log('ファイル内容を取得しました');
         setFileContent(content);
       } catch (err) {
+        console.error('ファイル内容の読み込み中にエラーが発生しました:', err);
         setError(err.message);
       } finally {
         setIsLoading(false);
+        console.log('ファイル内容の読み込みが完了しました');
       }
     };
 
