@@ -29,10 +29,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 generated_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "generated"))
 src_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "src"))
 
-# パスをログに出力
-logging.info(f"生成されたディレクトリのパス: {os.getcwd()}")
-logging.info(f"ソースディレクトリのパス: {os.getcwd()}")
-
 watched_dirs = [generated_dir, src_dir]
 file_handler = FileChangeHandler(watched_dirs)
 observer = Observer()

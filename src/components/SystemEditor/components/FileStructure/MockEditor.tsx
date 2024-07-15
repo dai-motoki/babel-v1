@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchFileContent, watchFileChanges } from '@/utils/api';
+import React, { useState, useEffect, useRef } from 'react';
+import { fetchFileContent } from '@/utils/api';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';
 
@@ -80,35 +80,6 @@ const MockEditor = ({ node, onClose }) => {
   const containerRef = useRef(null);
   const vimModeRef = useRef(null);
   const statusBarRef = useRef(null);
-  const [lastModified, setLastModified] = useState(null);
-
-  // ファイル内容の更新関数
-  const updateFileContent = useCallback(async () => {
-    try {
-      const content = await fetchFileContent(node.id);
-      setFileContent(content);
-      if (editorRef.current) {
-        editorRef.current.setValue(content);
-      }
-    } catch (err) {
-      console.error('ファイル内容の更新中にエラーが発生しました:', err);
-    }
-  }, [node.id]);
-
-  // ファイル変更の監視
-  useEffect(() => {
-    const unsubscribe = watchFileChanges((changes) => {
-      const relevantChange = changes.find(change => change.path.includes(node.id));
-      if (relevantChange) {
-        setLastModified(new Date());
-        updateFileContent();
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [node.id, updateFileContent]);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -266,11 +237,6 @@ const MockEditor = ({ node, onClose }) => {
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-white text-lg">{node.name}</h2>
           <div className="flex items-center">
-            {lastModified && (
-              <span className="text-white text-xs mr-2">
-                最終更新: {lastModified.toLocaleTimeString()}
-              </span>
-            )}
             <button 
               onClick={toggleVimMode} 
               className={`text-white text-xs mr-2 px-1.5 py-0.5 rounded-sm border border-blue-400 transition-colors duration-200 ${isVimMode ? 'bg-blue-700 hover:bg-blue-600' : 'bg-blue-800 hover:bg-blue-700'}`}
