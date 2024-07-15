@@ -69,6 +69,23 @@ async def get_generated_dirs():
         raise HTTPException(status_code=500, detail="ディレクトリの取得に失敗しました")
 
 async def get_directory_structure(path_type: str):
+    logger.info(f"ディレクトリ構造の取得を開始します。path_type: {path_type}")
+
+    # 現在の作業ディレクトリを取得し、表示する
+    import os
+
+    def print_current_directory():
+        """
+        現在の作業ディレクトリを取得し、表示する関数
+        """
+        current_dir = os.getcwd()
+        logger.debug(f"現在の作業ディレクトリ: {current_dir}")
+
+    # 関数を呼び出して現在のディレクトリを表示
+    print_current_directory()
+
+    logger.debug("aaaaaa")
+
     if path_type == "file_explorer":
         base_path = "../src/components/generated/"
     elif path_type == "requirements_definition":
@@ -78,11 +95,16 @@ async def get_directory_structure(path_type: str):
     else:
         base_path = "../../generated/{}".format(path_type)
 
+    logger.info(f"base_pathを設定しました: {base_path if path_type != 'babel' else base_paths}")
+
     try:
         gitignore_patterns = read_gitignore("../../.gitignore")
+        logger.debug(f"gitignoreパターンを読み込みました: {gitignore_patterns}")
+
         if path_type == "babel":
             structure = []
             for base_path in base_paths:
+                logger.debug(f"babelモード: {base_path}を処理中")
                 if os.path.isfile(base_path):
                     if not should_ignore(os.path.basename(base_path), gitignore_patterns):
                         content = read_file_content(base_path)
@@ -91,14 +113,18 @@ async def get_directory_structure(path_type: str):
                             "type": "file",
                             "path": base_path,
                         })
+                        logger.debug(f"ファイルを追加しました: {os.path.basename(base_path)}")
                 else:
                     structure.extend(create_structure(base_path, base_path, gitignore_patterns))
+                    logger.debug(f"ディレクトリ構造を追加しました: {base_path}")
         else:
             structure = create_structure(base_path, base_path, gitignore_patterns)
+            logger.debug(f"ディレクトリ構造を作成しました: {base_path}")
+
         logger.info(f"{path_type}のディレクトリ構造を正常に作成しました")
         return {"structure": structure}
     except Exception as e:
-        logger.error(f"{path_type}のディレクトリ構造の取得中にエラーが発生しました: {str(e)}")
+        logger.error(f"{path_type}のディレクトリ構造の取得中にエラーが発生しました: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="ディレクトリ構造の取得に失敗しました")
 
 logger.info("アプリケーションが起動しました")

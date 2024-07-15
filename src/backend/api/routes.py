@@ -109,9 +109,16 @@ async def load_file_route(filename: str):
 
 @router.get("/directory_structure")
 async def get_directory_structure_route(path_type: str):
-    return await get_directory_structure(path_type)
+    logger.info(f"ディレクトリ構造の取得リクエストを受信: path_type={path_type}")
+    try:
+        result = await get_directory_structure(path_type)
+        logger.info(f"ディレクトリ構造の取得に成功: path_type={path_type}")
+        return result
+    except Exception as e:
+        logger.error(f"ディレクトリ構造の取得中にエラーが発生: path_type={path_type}, エラー={str(e)}")
+        raise HTTPException(status_code=500, detail="ディレクトリ構造の取得に失敗しました")
 
-@router.get("/api/generated-dirs")
+@router.get("/generated-dirs")
 async def get_generated_dirs_route():
     logger.info("生成されたディレクトリの取得を開始します")
     try:
