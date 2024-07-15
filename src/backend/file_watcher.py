@@ -3,8 +3,9 @@ import os
 import logging
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, HTTPException, Body
 from fastapi.websockets import WebSocketDisconnect
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
@@ -60,18 +61,26 @@ async def broadcast_changes():
             file_handler.changes.clear()
             for client in connected_clients:
                 await client.send_json(message)
-        await asyncio.sleep(1)  # 1秒間隔で変更をチェック
+        await asyncio.sleep(1)  # 1秒間隔で変更を��ェック
 
 @app.on_event("startup")
 async def startup_event():
     logging.info("アプリケーションが起動しました")
     asyncio.create_task(broadcast_changes())
 
+@app.post("/api/save-file")
+async def save_file(file_path: str = Body(...), content: str = Body(...)):
+    try:
+        with open(file_path, 'w', encoding='utf-8') as file:
+            file.write(content)
+        return JSONResponse(content={"message": "ファイルが正常に保存されました"}, status_code=200)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ファイルの保存中にエラーが発生しました: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     logging.info("サーバーを起動しています...")
     uvicorn.run(app, host="0.0.0.0", port=8001, reload=True)
-
 
 
     # このスクリプトをコマンドラインで実行する方法：
@@ -81,7 +90,6 @@ if __name__ == "__main__":
     #
     # 注意事項：
     # - uvicornがインストールされていることを確認してください。
-    # - ホストを0.0.0.0に設定することで、ローカルネットワーク内の他のデバイスからもアクセス可能になります。
+    # - ホストを0.0.0.0に設定することで、ローカルネットワーク��の他のデバイスからもアクセス可能になります。
     # - ポート8001を使用していますが、必要に応じて変更可能です。
-    # - --reloadオプションを使用することで、コードの変更時に自動的にサーバーが再起動されます。
-
+    # - --reloadオプションを使用すること、コードの変更時に自動的にサーバーが再起動されます。

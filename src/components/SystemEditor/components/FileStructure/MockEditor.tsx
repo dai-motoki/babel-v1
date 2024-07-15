@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { fetchFileContent } from '@/utils/api';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { fetchFileContent, saveFileContent } from '@/utils/api';
 import * as monaco from 'monaco-editor';
 import { initVimMode } from 'monaco-vim';
 
@@ -67,8 +67,7 @@ monaco.editor.defineTheme('chic-blue', {
     'editorHoverWidget.background': '#00204008', // ホバーウィジェットの背景をさらに透明に
   }
 });
-
-const MockEditor = ({ node, onClose }) => {
+const MockEditor = ({ node, onClose, onFileChange }) => {
   const [position, setPosition] = useState({ x: window.innerWidth * 2/3, y: window.innerHeight / 2 - 250 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -80,6 +79,8 @@ const MockEditor = ({ node, onClose }) => {
   const containerRef = useRef(null);
   const vimModeRef = useRef(null);
   const statusBarRef = useRef(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const saveTimeoutRef = useRef(null);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -113,10 +114,13 @@ const MockEditor = ({ node, onClose }) => {
       console.log('ファイル内容の読み込みを開始します');
       try {
         setIsLoading(true);
-        console.log(`ファイルパス: ${node}`);
+        console.log(`ファイルパス: ${node.id}`);
         const content = await fetchFileContent(node.id);
         console.log('ファイル内容を取得しました');
         setFileContent(content);
+        if (editorRef.current) {
+          editorRef.current.setValue(content);
+        }
       } catch (err) {
         console.error('ファイル内容の読み込み中にエラーが発生しました:', err);
         setError(err.message);
@@ -127,44 +131,75 @@ const MockEditor = ({ node, onClose }) => {
     };
 
     loadFileContent();
-  }, [node.path]);
+  }, [node.id]);
 
   useEffect(() => {
     if (!isLoading && !error && containerRef.current) {
-      // Monacoエディタの初期化
-      editorRef.current = monaco.editor.create(containerRef.current, {
-        ...editorOptions,
-        value: fileContent,
-        language: getLanguageFromFileName(node.name),
-        theme: 'chic-blue', // カスタムテーマを適用
-      });
+      if (!editorRef.current) {
+        // Monacoエディタの初期化
+        editorRef.current = monaco.editor.create(containerRef.current, {
+          ...editorOptions,
+          value: fileContent,
+          language: getLanguageFromFileName(node.name),
+          theme: 'chic-blue', // カスタムテーマを適用
+        });
 
-      // シンタックスハイライトを適用
-      monaco.editor.setTheme('chic-blue');
+        // シンタックスハイライトを適用
+        monaco.editor.setTheme('chic-blue');
 
-      // Vimモードの初期化
-      if (isVimMode) {
-        vimModeRef.current = initVimMode(editorRef.current, statusBarRef.current);
-      }
-
-      // Control + [ でノーマルモードに入る
-      editorRef.current.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.BracketLeft, () => {
-        if (isVimMode && vimModeRef.current) {
-          vimModeRef.current.dispose();
+        // Vimモードの初期化
+        if (isVimMode) {
           vimModeRef.current = initVimMode(editorRef.current, statusBarRef.current);
         }
-      });
 
-      return () => {
-        if (editorRef.current) {
-          editorRef.current.dispose();
+        // Control + [ でノーマルモードに入る
+        editorRef.current.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.BracketLeft, () => {
+          if (isVimMode && vimModeRef.current) {
+            vimModeRef.current.dispose();
+            vimModeRef.current = initVimMode(editorRef.current, statusBarRef.current);
+          }
+        });
+
+        editorRef.current.onDidChangeModelContent(() => {
+          handleEditorChange(editorRef.current.getValue());
+        });
+      } else {
+        // エディタが既に存在する場合、ファイルの内容と言語を更新
+        editorRef.current.setValue(fileContent);
+        const model = editorRef.current.getModel();
+        if (model) {
+          monaco.editor.setModelLanguage(model, getLanguageFromFileName(node.name));
         }
-        if (vimModeRef.current) {
-          vimModeRef.current.dispose();
-        }
-      };
+      }
     }
+
+    return () => {
+      if (editorRef.current) {
+        editorRef.current.dispose();
+      }
+      if (vimModeRef.current) {
+        vimModeRef.current.dispose();
+      }
+    };
   }, [isLoading, error, fileContent, node.name, isVimMode]);
+
+  const handleEditorChange = useCallback((value) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      setIsSaving(true);
+      try {
+        await saveFileContent(node.id, value);
+        onFileChange({ changes: [{ type: 'modified', path: node.id }] });
+      } catch (error) {
+        console.error('ファイルの保存中にエラーが発生しました:', error);
+      } finally {
+        setIsSaving(false);
+      }
+    }, 1000); // 1秒後に保存
+  }, [node.id, onFileChange]);
 
   // ファイル名から言語を推測する関数
   const getLanguageFromFileName = (fileName: string): string => {
@@ -244,6 +279,7 @@ const MockEditor = ({ node, onClose }) => {
               {isVimMode ? 'Vim: ON' : 'Vim: OFF'}
             </button>
             <button onClick={onClose} className="text-white text-sm hover:bg-[#3c3c3c] px-2 py-1 rounded">閉じる</button>
+            {isSaving && <span className="text-white text-xs mr-2">保存中...</span>}
           </div>
         </div>
         {isLoading ? (

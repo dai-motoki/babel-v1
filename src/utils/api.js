@@ -162,6 +162,27 @@ export const watchFileChanges = (callback) => {
   };
 };
 
+// ファイルの内容を保存する関数
+export const saveFileContent = async (filePath, content) => {
+  try {
+    const response = await fetch('http://localhost:8001/api/save-file', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ file_path: filePath, content }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'ファイルの保存中にエラーが発生しました');
+    }
+  } catch (error) {
+    console.error('ファイルの保存中にエラーが発生しました:', error);
+    throw error;
+  }
+};
+
 export default {
   get,
   post,
@@ -175,5 +196,6 @@ export default {
   sendChatMessage,
   fetchDirectoryStructure,
   fetchFileContent,
-  watchFileChanges
+  watchFileChanges,
+  saveFileContent
 };

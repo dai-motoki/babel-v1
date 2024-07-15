@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import ForceGraph from './ForceGraph';
@@ -6,7 +5,6 @@ import MockEditor from './MockEditor';
 import SearchBar from './SearchBar';
 import RecentChanges from './RecentChanges';
 import Button from '../common/Button';
-// import useFileChanges from '@/hooks/useFileChanges2';
 import useFileChanges from '@/hooks/useFileChanges';
 import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
@@ -20,7 +18,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [directoryStructure, setDirectoryStructure] = useState({ nodes: [], links: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const changes = useFileChanges();
+  const { changes, handleFileChange } = useFileChanges();
   const [selectedStructure, setSelectedStructure] = useState('FileTree');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredNodes, setFilteredNodes] = useState([]);
@@ -232,6 +230,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               key={node.id}
               node={node}
               onClose={() => setSelectedNodes(prev => prev.filter(n => n.id !== node.id))}
+              onFileChange={handleFileChange}
             />
           ))}
           <div className="flex-grow">
