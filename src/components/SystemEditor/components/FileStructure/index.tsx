@@ -10,10 +10,11 @@ import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
-import { Highlighter, Network, Edit, MessageCircle } from 'lucide-react';
+import { Highlighter, Network, Edit, MessageCircle, MousePointer } from 'lucide-react';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();
+  const overlayRef = useRef();
   const { t } = useTranslation();
   const [selectedNodes, setSelectedNodes] = useState([]);
   const [directoryStructure, setDirectoryStructure] = useState({ nodes: [], links: [] });
@@ -28,6 +29,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [clickedNode, setClickedNode] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [highlightedNodes, setHighlightedNodes] = useState([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectionStart, setSelectionStart] = useState(null);
+  const [selectionEnd, setSelectionEnd] = useState(null);
+  const [selectedNodesInBox, setSelectedNodesInBox] = useState([]);
 
   // ディレクトリ構造を読み込む関数
   const loadDirectoryStructure = useCallback(async () => {
@@ -61,10 +66,12 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   // ノードがクリックされたときの処理
   const handleClick = useCallback((node, event) => {
-    console.log('クリックされたノード:', node);
-    setMenuPosition({ x: event.clientX, y: event.clientY });
-    setClickedNode(node);
-  }, []);
+    if (!isSelectionMode) {
+      console.log('クリックされたノード:', node);
+      setMenuPosition({ x: event.clientX, y: event.clientY });
+      setClickedNode(node);
+    }
+  }, [isSelectionMode]);
 
   // ノードをハイライトする関数
   const highlightNode = useCallback((node) => {
@@ -137,6 +144,78 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [directoryStructure]);
 
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    if (isSelectionMode) {
+      // 選択モードを解除する時、選択状態をリセット
+      setSelectedNodesInBox([]);
+      setSelectionStart(null);
+      setSelectionEnd(null);
+    }
+  };
+
+  const handleOverlayMouseDown = (event) => {
+    if (isSelectionMode) {
+      const { offsetX, offsetY } = event.nativeEvent;
+      setSelectionStart({ x: offsetX, y: offsetY });
+      setSelectionEnd(null);
+      setSelectedNodesInBox([]);
+    }
+  };
+
+  const handleOverlayMouseMove = (event) => {
+    if (isSelectionMode && selectionStart) {
+      const { offsetX, offsetY } = event.nativeEvent;
+      setSelectionEnd({ x: offsetX, y: offsetY });
+    }
+  };
+
+  const handleOverlayMouseUp = () => {
+    if (isSelectionMode && selectionStart && selectionEnd) {
+      const selectedNodes = filteredNodes.filter(node => {
+        const { x, y } = fgRef.current.graph2ScreenCoords(node.x, node.y);
+        return (
+          x >= Math.min(selectionStart.x, selectionEnd.x) &&
+          x <= Math.max(selectionStart.x, selectionEnd.x) &&
+          y >= Math.min(selectionStart.y, selectionEnd.y) &&
+          y <= Math.max(selectionStart.y, selectionEnd.y)
+        );
+      });
+      setSelectedNodesInBox(selectedNodes);
+      setSelectionStart(null);
+      setSelectionEnd(null);
+    }
+  };
+
+  const handleSelectionAction = (action) => {
+    switch (action) {
+      case 'highlight':
+        setHighlightedNodes(prevNodes => [...prevNodes, ...selectedNodesInBox]);
+        break;
+      case 'surroundings':
+        const surroundingNodes = new Set(selectedNodesInBox);
+        const surroundingLinks = new Set();
+        selectedNodesInBox.forEach(node => {
+          directoryStructure.links.forEach(link => {
+            if (link.source.id === node.id || link.target.id === node.id) {
+              surroundingLinks.add(link);
+              const adjacentNode = link.source.id === node.id ? link.target : link.source;
+              surroundingNodes.add(adjacentNode);
+            }
+          });
+        });
+        setFilteredNodes(Array.from(surroundingNodes));
+        setFilteredLinks(Array.from(surroundingLinks));
+        break;
+      case 'showEditor':
+        selectedNodesInBox.forEach(node => showEditor(node));
+        break;
+      default:
+        console.log(`Action ${action} not implemented for selection`);
+    }
+    setSelectedNodesInBox([]);
+  };
+
   const forceGraphConfig = useMemo(() => ({
     graphData: { nodes: filteredNodes, links: filteredLinks },
     nodeLabel: "name",
@@ -153,7 +232,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       ctx.fillStyle = getNodeColor(node);
       ctx.fill();
 
-      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodes.some(n => n.id === node.id)) {
+      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodes.some(n => n.id === node.id) || selectedNodesInBox.some(n => n.id === node.id)) {
         const baseGlowRadius = node.type === 'directory' ? 8 : 6;
         const time = performance.now() / 1000;
         const glowRadius = baseGlowRadius + Math.sin(time * 1.5) * 2;
@@ -172,6 +251,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
             gradient.addColorStop(0, `rgba(0, 255, 255, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
             gradient.addColorStop(0.5, `rgba(0, 255, 255, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
+          } else if (selectedNodesInBox.some(n => n.id === node.id)) {
+            gradient.addColorStop(0, `rgba(255, 0, 0, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
+            gradient.addColorStop(0.5, `rgba(255, 0, 0, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
           } else {
             gradient.addColorStop(0, `rgba(255, 255, 255, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
             gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
@@ -186,8 +269,12 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         ctx.beginPath();
         const circleRadius = node.type === 'directory' ? 6 : 4;
         ctx.arc(node.x, node.y, circleRadius, 0, 2 * Math.PI);
-        ctx.strokeStyle = highlightedNodes.some(n => n.id === node.id) ? 'rgba(255, 255, 255, 1)' : node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = highlightedNodes.some(n => n.id === node.id) ? 3 : 2;
+        ctx.strokeStyle = highlightedNodes.some(n => n.id === node.id) ? 'rgba(255, 255, 255, 1)' : 
+                          node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : 
+                          node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 
+                          selectedNodesInBox.some(n => n.id === node.id) ? 'rgba(255, 0, 0, 0.8)' :
+                          'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = highlightedNodes.some(n => n.id === node.id) || selectedNodesInBox.some(n => n.id === node.id) ? 3 : 2;
         ctx.stroke();
       }
 
@@ -212,7 +299,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     cooldownTime: 15000,
     width: 2000,
     height: 1000,
-  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodes]);
+  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodes, selectedNodesInBox]);
 
   if (!selectedSystem) {
     return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('システムディレクトリを選択してください')}</div>;
@@ -233,11 +320,11 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           <RecentChanges changes={changes} />
         </div>
       </div>
-      <div className="absolute top-0 right-0 p-2 z-10">
+      <div className="absolute bottom-0 left-0 p-2 z-10">
         <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
           <h4 className="text-[#d4d4d4] font-medium mb-2">{t('ハイライト済みノード')}</h4>
-          <ul className="text-[#d4d4d4] text-sm">
-            {highlightedNodes.map(node => (
+          <ul className="text-[#d4d4d4] text-sm max-h-40 overflow-y-auto">
+            {highlightedNodes.map((node) => (
               <li key={node.id}>{node.path || node.name}</li>
             ))}
           </ul>
@@ -250,6 +337,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           <Button onClick={showAll}>{t('全て表示')}</Button>
           <Button onClick={() => setShowFileNames(!showFileNames)}>
             {showFileNames ? t('ファイル名を非表示') : t('ファイル名を表示')}
+          </Button>
+          <Button onClick={toggleSelectionMode} className={isSelectionMode ? 'bg-blue-500' : ''}>
+            <MousePointer className="w-4 h-4 mr-2" />
+            {isSelectionMode ? t('選択モード: ON') : t('選択モード: OFF')}
           </Button>
         </div>
       </div>
@@ -268,7 +359,31 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               ref={fgRef}
               {...forceGraphConfig}
             />
-            {clickedNode && (
+            {isSelectionMode && (
+              <div
+                ref={overlayRef}
+                className="absolute inset-0 bg-black bg-opacity-30 cursor-crosshair"
+                onMouseDown={handleOverlayMouseDown}
+                onMouseMove={handleOverlayMouseMove}
+                onMouseUp={handleOverlayMouseUp}
+              >
+                {selectionStart && selectionEnd && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: Math.min(selectionStart.x, selectionEnd.x),
+                      top: Math.min(selectionStart.y, selectionEnd.y),
+                      width: Math.abs(selectionEnd.x - selectionStart.x),
+                      height: Math.abs(selectionEnd.y - selectionStart.y),
+                      border: '2px solid #4a90e2',
+                      backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                )}
+              </div>
+            )}
+            {clickedNode && !isSelectionMode && (
               <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ left: menuPosition.x, top: menuPosition.y, transform: 'translate(-50%, -100%)' }}>
                 <Button onClick={() => { highlightNode(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
                   <Highlighter className="w-3 h-3 mr-2 text-yellow-200 opacity-50" />
@@ -286,6 +401,53 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                   <MessageCircle className="w-3 h-3 mr-2 text-red-200 opacity-50" />
                   <span>{t('会話する')}</span>
                 </Button>
+              </div>
+            )}
+            {selectedNodesInBox.length > 0 && (
+              <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ right: 10, top: 10 }}>
+                <Button onClick={() => handleSelectionAction('highlight')} className="text-xs flex items-center">
+                  <Highlighter className="w-3 h-3 mr-2 text-yellow-200 opacity-50" />
+                  <span>{t('選択をハイライト')}</span>
+                </Button>
+                <Button onClick={() => handleSelectionAction('surroundings')} className="text-xs flex items-center">
+                  <Network className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
+                  <span>{t('選択の周辺取得')}</span>
+                </Button>
+                <Button onClick={() => handleSelectionAction('showEditor')} className="text-xs flex items-center">
+                  <Edit className="w-3 h-3 mr-2 text-green-200 opacity-50" />
+                  <span>{t('選択をエディタ表示')}</span>
+                </Button>
+                <Button onClick={() => {
+                  handleSelectionAction('chat');
+                  // ダミーのチャットbotUIを表示する
+                  setShowChatUI(true);
+                }} className="text-xs flex items-center">
+                  <MessageCircle className="w-3 h-3 mr-2 text-red-200 opacity-50" />
+                  <span>{t('会話する')}</span>
+                </Button>
+                {showChatUI && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className="bg-white p-4 rounded-lg w-96">
+                      <h2 className="text-lg font-bold mb-4">チャットボット</h2>
+                      <div className="h-64 overflow-y-auto mb-4 bg-gray-100 p-2 rounded">
+                        {/* ここにチャットメッセージを表示 */}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="メッセージを入力..."
+                        className="w-full p-2 border rounded"
+                      />
+                      <div className="flex justify-end mt-2">
+                        <button
+                          onClick={() => setShowChatUI(false)}
+                          className="bg-red-500 text-white px-4 py-2 rounded"
+                        >
+                          閉じる
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
