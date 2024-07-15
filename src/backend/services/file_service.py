@@ -149,3 +149,55 @@ def read_file_content(file_path):
     except Exception as e:
         logger.error(f"ファイル読み込み中にエラーが発生しました: {file_path}, エラー: {str(e)}")
         return None
+
+
+
+# ファイル操作サービス
+import os
+from fastapi import UploadFile
+from models.file import FileModel
+from utils.file_operations import get_file_size, ensure_directory_exists, read_file, write_file, append_to_file
+
+class FileService:
+    def __init__(self, upload_dir="uploads"):
+        self.upload_dir = upload_dir
+        ensure_directory_exists(self.upload_dir)
+
+    async def save_file(self, file: UploadFile) -> FileModel:
+        file_path = os.path.join(self.upload_dir, file.filename)
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        size = get_file_size(file_path)
+        return FileModel(filename=file.filename, size=size)
+
+    async def list_files(self) -> list[FileModel]:
+        files = []
+        for filename in os.listdir(self.upload_dir):
+            file_path = os.path.join(self.upload_dir, filename)
+            size = get_file_size(file_path)
+            files.append(FileModel(filename=filename, size=size))
+        return files
+
+    async def get_file_content(self, filename: str) -> str:
+        file_path = os.path.join(self.upload_dir, filename)
+        return read_file(file_path)
+
+    async def edit_file(self, filename: str, line_number: int, new_content: str):
+        file_path = os.path.join(self.upload_dir, filename)
+        content = read_file(file_path).splitlines()
+        if line_number < 1 or line_number > len(content):
+            raise ValueError("Invalid line number")
+        content[line_number - 1] = new_content
+        write_file(file_path, " ".join(content))
+
+    async def append_to_file(self, filename: str, content: str):
+        file_path = os.path.join(self.upload_dir, filename)
+        append_to_file(file_path, content)
+
+    async def delete_file(self, filename: str):
+        file_path = os.path.join(self.upload_dir, filename)
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"File {filename} not found")
+        os.remove(file_path)
+

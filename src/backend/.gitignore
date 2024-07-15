@@ -1,0 +1,27 @@
+# Gitが無視するファイルの設定
+*.pyc
+__pycache__
+.venv
+
+
+# 追記された内容:
+# # Gitが無視するファイルの設定
+# *.pyc
+# __pycache__
+# .venv
+# 
+
+# 追記された内容:
+# Gitが無視するファイルの設定
+*.pyc
+__pycache__
+.venv
+uploads/
+
+
+# 追記された内容:
+# Gitが無視するファイルの設定
+*.pyc
+__pycache__
+.venv
+uploads/

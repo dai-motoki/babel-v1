@@ -137,3 +137,53 @@ async def create_new_system(name: str):
 
     # Implement the create_new_system function
     pass
+
+# 追記された内容:
+# # FastAPIのルーター設定
+# # 依存: fastapi
+# from fastapi import APIRouter
+# 
+# router = APIRouter()
+# 
+
+# 追記された内容:
+# # FastAPIのルーター設定
+# # 依存: fastapi
+# from fastapi import APIRouter
+# 
+# router = APIRouter()
+# 
+
+# 追記された内容:
+# # FastAPIのルーター設定
+# # 依存: fastapi
+# from fastapi import APIRouter
+# 
+# router = APIRouter()
+# 
+
+# # 追記された内容:
+# # FastAPIのルーター設定
+# from fastapi import APIRouter
+# from .file_operations import router as file_router
+
+# router = APIRouter()
+# router.include_router(file_router, prefix="/files", tags=["files"])
+
+
+# # 追記された内容:
+# # FastAPIのルーター設定
+# from fastapi import APIRouter
+# from .file_operations import router as file_router
+
+# router = APIRouter()
+# router.include_router(file_router, prefix="/files", tags=["files"])
+
+
+# # 追記された内容:
+# # FastAPIのルーター設定
+# from fastapi import APIRouter
+# from .file_operations import router as file_router
+
+# router = APIRouter()
+# router.include_router(file_router, prefix="/files", tags=["files"])

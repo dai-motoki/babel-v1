@@ -35,3 +35,27 @@ async def execute_python(code: str):
     finally:
         os.unlink(temp_file_path)
         logger.info(f"一時ファイルを削除しました: {temp_file_path}")
+
+# 追記された内容:
+# # ファイル操作ユーティリティ
+# ファイル操作ユーティリティ
+import os
+
+def get_file_size(file_path: str) -> int:
+    return os.path.getsize(file_path)
+
+def ensure_directory_exists(directory: str):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+def read_file(file_path: str) -> str:
+    with open(file_path, 'r') as file:
+        return file.read()
+
+def write_file(file_path: str, content: str):
+    with open(file_path, 'w') as file:
+        file.write(content)
+
+def append_to_file(file_path: str, content: str):
+    with open(file_path, 'a') as file:
+        file.write(content)
