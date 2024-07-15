@@ -6,7 +6,8 @@ import MockEditor from './MockEditor';
 import SearchBar from './SearchBar';
 import RecentChanges from './RecentChanges';
 import Button from '../common/Button';
-import useFileChanges from '@/hooks/useFileChanges2';
+// import useFileChanges from '@/hooks/useFileChanges2';
+import useFileChanges from '@/hooks/useFileChanges';
 import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
@@ -199,14 +200,19 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   }
 
   return (
-    <div className="h-full border border-[#3c3c3c] rounded-md overflow-hidden bg-[#1e1e1e] flex flex-col">
+    <div className="h-full border border-[#3c3c3c] rounded-md overflow-hidden bg-[#1e1e1e] flex flex-col relative">
+      <div className="absolute top-0 left-0 p-2 z-10">
+        <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
+          <RecentChanges changes={changes} />
+        </div>
+      </div>
       <div className="flex items-center justify-between p-3">
-        <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('Project Structure')}</h3>
+        <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('プロジェクト構造')}</h3>
         <div className="flex space-x-2">
           <SearchBar onSearch={handleSearch} />
-          <Button onClick={showAll}>{t('Show All')}</Button>
+          <Button onClick={showAll}>{t('全て表示')}</Button>
           <Button onClick={() => setShowFileNames(!showFileNames)}>
-            {showFileNames ? t('Hide File Names') : t('Show File Names')}
+            {showFileNames ? t('ファイル名を非表示') : t('ファイル名を表示')}
           </Button>
           {['FileTree', 'BusinessStructure', 'Dependencies', 'DataStructure', 'Similarity', 'ImmuneSystem', 'Multimedia'].map((structure) => (
             <Button
@@ -219,19 +225,22 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           ))}
         </div>
       </div>
-      <RecentChanges changes={changes} />
-      {selectedNodes.map((node) => (
-        <MockEditor
-          key={node.id}
-          node={node}
-          onClose={() => setSelectedNodes(prev => prev.filter(n => n.id !== node.id))}
-        />
-      ))}
-      <div className="flex-grow">
-        <ForceGraph
-          ref={fgRef}
-          {...forceGraphConfig}
-        />
+      <div className="flex-grow flex">
+        <div className="w-full flex flex-col">
+          {selectedNodes.map((node) => (
+            <MockEditor
+              key={node.id}
+              node={node}
+              onClose={() => setSelectedNodes(prev => prev.filter(n => n.id !== node.id))}
+            />
+          ))}
+          <div className="flex-grow">
+            <ForceGraph
+              ref={fgRef}
+              {...forceGraphConfig}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

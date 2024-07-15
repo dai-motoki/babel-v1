@@ -6,8 +6,8 @@ const RecentChanges = ({ changes }) => {
   const { t } = useTranslation();
 
   return (
-    <div className="p-3 text-[#d4d4d4] max-h-[150px] overflow-y-auto">
-      <h3 className="text-md font-medium mb-2">{t('Recent Changes')}:</h3>
+    <div className="p-3 text-[#d4d4d4] overflow-y-auto">
+      <h3 className="text-md font-medium mb-2">{t('最近の変更')}:</h3>
       <ul className="list-disc list-inside">
         {changes.slice(0, 10).map((change, index) => (
           <li key={index} className="text-sm mb-1">
