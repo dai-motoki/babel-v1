@@ -12,25 +12,29 @@ app = FastAPI()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 class FileChangeHandler(FileSystemEventHandler):
-    def __init__(self):
+    def __init__(self, watched_dirs):
         self.changes = set()
+        self.watched_dirs = watched_dirs
 
     def on_any_event(self, event):
         if event.is_directory:
             return
-        self.changes.add((event.event_type, event.src_path))
-        logging.info(f"変更検知: {event.event_type} - {event.src_path}")
-
-file_handler = FileChangeHandler()
-observer = Observer()
+        # イベントが監視対象のディレクトリ内で発生したかチェック
+        if any(event.src_path.startswith(dir) for dir in self.watched_dirs):
+            self.changes.add((event.event_type, event.src_path))
+            logging.info(f"変更検知: {event.event_type} - {event.src_path}")
 
 # 監視対象のディレクトリを絶対パスで指定
 current_dir = os.path.dirname(os.path.abspath(__file__))
 generated_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "generated"))
 src_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "src"))
 
-observer.schedule(file_handler, path=generated_dir, recursive=True)
-observer.schedule(file_handler, path=src_dir, recursive=True)
+watched_dirs = [generated_dir, src_dir]
+file_handler = FileChangeHandler(watched_dirs)
+observer = Observer()
+
+for dir in watched_dirs:
+    observer.schedule(file_handler, path=dir, recursive=True)
 observer.start()
 
 connected_clients = set()
