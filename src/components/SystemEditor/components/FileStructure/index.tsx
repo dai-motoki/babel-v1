@@ -10,6 +10,7 @@ import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
+import { Highlighter, Network, Edit, MessageCircle } from 'lucide-react';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();
@@ -26,8 +27,9 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showFileNames, setShowFileNames] = useState(false);
   const [clickedNode, setClickedNode] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  const [highlightedNode, setHighlightedNode] = useState(null);
+  const [highlightedNodes, setHighlightedNodes] = useState([]);
 
+  // ディレクトリ構造を読み込む関数
   const loadDirectoryStructure = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -57,21 +59,22 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [changes, loadDirectoryStructure]);
 
-  // ノードがクリックされたときの処理を定義するuseCallback
+  // ノードがクリックされたときの処理
   const handleClick = useCallback((node, event) => {
-    // クリックされたノードをコンソールに出力
     console.log('クリックされたノード:', node);
-
-    // メニューの位置を設定
     setMenuPosition({ x: event.clientX, y: event.clientY });
-    
-    // クリックされたノードを設定
     setClickedNode(node);
   }, []);
 
   // ノードをハイライトする関数
   const highlightNode = useCallback((node) => {
-    setHighlightedNode(node);
+    setHighlightedNodes(prevNodes => {
+      if (prevNodes.some(n => n.id === node.id)) {
+        return prevNodes.filter(n => n.id !== node.id);
+      } else {
+        return [...prevNodes, node];
+      }
+    });
   }, []);
 
   // ノードの周辺を取得する関数
@@ -105,7 +108,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     });
   }, []);
 
-  // 検索処理を行うuseCallback
+  // 検索処理を行う関数
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
     if (!query) {
@@ -124,7 +127,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [directoryStructure]);
 
-  // 全てのノードとリンクを表示するuseCallback
+  // 全てのノードとリンクを表示する関数
   const showAll = useCallback(() => {
     setFilteredNodes(directoryStructure.nodes);
     setFilteredLinks(directoryStructure.links);
@@ -150,14 +153,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       ctx.fillStyle = getNodeColor(node);
       ctx.fill();
 
-      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || node === highlightedNode) {
+      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodes.some(n => n.id === node.id)) {
         const baseGlowRadius = node.type === 'directory' ? 8 : 6;
         const time = performance.now() / 1000;
         const glowRadius = baseGlowRadius + Math.sin(time * 1.5) * 2;
         
         if (isFinite(node.x) && isFinite(node.y)) {
           const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowRadius);
-          if (node === highlightedNode) {
+          if (highlightedNodes.some(n => n.id === node.id)) {
             gradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.7 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -183,8 +186,8 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         ctx.beginPath();
         const circleRadius = node.type === 'directory' ? 6 : 4;
         ctx.arc(node.x, node.y, circleRadius, 0, 2 * Math.PI);
-        ctx.strokeStyle = node === highlightedNode ? 'rgba(255, 255, 255, 1)' : node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = node === highlightedNode ? 3 : 2;
+        ctx.strokeStyle = highlightedNodes.some(n => n.id === node.id) ? 'rgba(255, 255, 255, 1)' : node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = highlightedNodes.some(n => n.id === node.id) ? 3 : 2;
         ctx.stroke();
       }
 
@@ -209,7 +212,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     cooldownTime: 15000,
     width: 2000,
     height: 1000,
-  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNode]);
+  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodes]);
 
   if (!selectedSystem) {
     return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('システムディレクトリを選択してください')}</div>;
@@ -228,6 +231,16 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       <div className="absolute top-0 left-0 p-2 z-10">
         <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
           <RecentChanges changes={changes} />
+        </div>
+      </div>
+      <div className="absolute top-0 right-0 p-2 z-10">
+        <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
+          <h4 className="text-[#d4d4d4] font-medium mb-2">{t('ハイライト済みノード')}</h4>
+          <ul className="text-[#d4d4d4] text-sm">
+            {highlightedNodes.map(node => (
+              <li key={node.id}>{node.path || node.name}</li>
+            ))}
+          </ul>
         </div>
       </div>
       <div className="flex items-center justify-between p-3">
@@ -256,13 +269,23 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               {...forceGraphConfig}
             />
             {clickedNode && (
-              <div
-                className="absolute bg-[#2a2a2a] rounded shadow-lg p-2"
-                style={{ left: menuPosition.x, top: menuPosition.y }}
-              >
-                <Button onClick={() => highlightNode(clickedNode)}>{t('ノードハイライト')}</Button>
-                <Button onClick={() => getNodeSurroundings(clickedNode)}>{t('ノード周辺取得')}</Button>
-                <Button onClick={() => showEditor(clickedNode)}>{t('エディタ表示')}</Button>
+              <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ left: menuPosition.x, top: menuPosition.y, transform: 'translate(-50%, -100%)' }}>
+                <Button onClick={() => { highlightNode(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
+                  <Highlighter className="w-3 h-3 mr-2 text-yellow-200 opacity-50" />
+                  <span>{t('ハイライト')}</span>
+                </Button>
+                <Button onClick={() => { getNodeSurroundings(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
+                  <Network className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
+                  <span>{t('周辺取得')}</span>
+                </Button>
+                <Button onClick={() => { showEditor(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
+                  <Edit className="w-3 h-3 mr-2 text-green-200 opacity-50" />
+                  <span>{t('エディタ表示')}</span>
+                </Button>
+                <Button onClick={() => { console.log('会話ボタンがクリックされました'); setClickedNode(null); }} className="text-xs flex items-center">
+                  <MessageCircle className="w-3 h-3 mr-2 text-red-200 opacity-50" />
+                  <span>{t('会話する')}</span>
+                </Button>
               </div>
             )}
           </div>
