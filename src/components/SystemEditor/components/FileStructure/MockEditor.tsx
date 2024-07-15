@@ -278,7 +278,10 @@ const MockEditor = ({ node, onClose, onFileChange }) => {
             >
               {isVimMode ? 'Vim: ON' : 'Vim: OFF'}
             </button>
-            <button onClick={onClose} className="text-white text-sm hover:bg-[#3c3c3c] px-2 py-1 rounded">閉じる</button>
+            <button onClick={onClose} className="text-white text-sm hover:bg-[#3c3c3c] px-2 py-1 rounded">
+              <span aria-hidden="true">&times;</span>
+              <span className="sr-only">閉じる</span>
+            </button>
             {isSaving && <span className="text-white text-xs mr-2">保存中...</span>}
           </div>
         </div>

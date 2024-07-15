@@ -23,7 +23,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredNodes, setFilteredNodes] = useState([]);
   const [filteredLinks, setFilteredLinks] = useState([]);
-  const [showFileNames, setShowFileNames] = useState(true);
+  const [showFileNames, setShowFileNames] = useState(false);
+  const [clickedNode, setClickedNode] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [highlightedNode, setHighlightedNode] = useState(null);
 
   const loadDirectoryStructure = useCallback(async () => {
     try {
@@ -54,37 +57,55 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [changes, loadDirectoryStructure]);
 
-  const handleClick = useCallback((node) => {
-    console.log('Clicked node:', node);
+  // ノードがクリックされたときの処理を定義するuseCallback
+  const handleClick = useCallback((node, event) => {
+    // クリックされたノードをコンソールに出力
+    console.log('クリックされたノード:', node);
 
-    const highlightedNodes = new Set();
-    const highlightedLinks = new Set();
+    // メニューの位置を設定
+    setMenuPosition({ x: event.clientX, y: event.clientY });
+    
+    // クリックされたノードを設定
+    setClickedNode(node);
+  }, []);
 
-    highlightedNodes.add(node);
+  // ノードをハイライトする関数
+  const highlightNode = useCallback((node) => {
+    setHighlightedNode(node);
+  }, []);
+
+  // ノードの周辺を取得する関数
+  const getNodeSurroundings = useCallback((node) => {
+    const surroundingNodes = new Set([node]);
+    const surroundingLinks = new Set();
 
     directoryStructure.links.forEach(link => {
       if (typeof link.source === 'object' && typeof link.target === 'object') {
         if (link.source.id === node.id || link.target.id === node.id) {
-          highlightedLinks.add(link);
+          surroundingLinks.add(link);
           const adjacentNode = link.source.id === node.id ? link.target : link.source;
-          highlightedNodes.add(adjacentNode);
+          surroundingNodes.add(adjacentNode);
         }
       } else {
-        console.error('Link source or target has unexpected format:', link);
+        console.error('リンクのsourceまたはtargetが予期せぬ形式です:', link);
       }
     });
 
-    setFilteredNodes(Array.from(highlightedNodes));
-    setFilteredLinks(Array.from(highlightedLinks));
+    setFilteredNodes(Array.from(surroundingNodes));
+    setFilteredLinks(Array.from(surroundingLinks));
+  }, [directoryStructure]);
 
+  // エディタを表示する関数
+  const showEditor = useCallback((node) => {
     setSelectedNodes(prevSelected => {
       if (!prevSelected.some(n => n.id === node.id)) {
         return [...prevSelected, node];
       }
       return prevSelected;
     });
-  }, [directoryStructure]);
+  }, []);
 
+  // 検索処理を行うuseCallback
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
     if (!query) {
@@ -103,6 +124,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [directoryStructure]);
 
+  // 全てのノードとリンクを表示するuseCallback
   const showAll = useCallback(() => {
     setFilteredNodes(directoryStructure.nodes);
     setFilteredLinks(directoryStructure.links);
@@ -128,14 +150,18 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       ctx.fillStyle = getNodeColor(node);
       ctx.fill();
 
-      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta') {
+      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || node === highlightedNode) {
         const baseGlowRadius = node.type === 'directory' ? 8 : 6;
         const time = performance.now() / 1000;
         const glowRadius = baseGlowRadius + Math.sin(time * 1.5) * 2;
         
         if (isFinite(node.x) && isFinite(node.y)) {
           const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowRadius);
-          if (node.name === 'meta') {
+          if (node === highlightedNode) {
+            gradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.7 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          } else if (node.name === 'meta') {
             gradient.addColorStop(0, `rgba(255, 215, 0, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
             gradient.addColorStop(0.5, `rgba(255, 215, 0, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
@@ -157,8 +183,8 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         ctx.beginPath();
         const circleRadius = node.type === 'directory' ? 6 : 4;
         ctx.arc(node.x, node.y, circleRadius, 0, 2 * Math.PI);
-        ctx.strokeStyle = node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = node === highlightedNode ? 'rgba(255, 255, 255, 1)' : node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = node === highlightedNode ? 3 : 2;
         ctx.stroke();
       }
 
@@ -171,9 +197,9 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
       node.__bckgDimensions = bckgDimensions;
     },
-    linkWidth: 1.4,
+    linkWidth: 2,
     linkDirectionalParticles: 2,
-    linkDirectionalParticleWidth: 1,
+    linkDirectionalParticleWidth: 2.5,
     linkDirectionalParticleSpeed: 0.005,
     linkDirectionalParticleColor: () => 'rgba(255, 255, 255, 0.6)',
     linkColor: () => 'rgba(255, 255, 255, 0.1)',
@@ -183,18 +209,18 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     cooldownTime: 15000,
     width: 2000,
     height: 1000,
-  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames]);
+  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNode]);
 
   if (!selectedSystem) {
-    return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('Please select a system directory')}</div>;
+    return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('システムディレクトリを選択してください')}</div>;
   }
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('Loading directory structure...')}</div>;
+    return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('ディレクトリ構造を読み込み中...')}</div>;
   }
 
   if (error) {
-    return <div className="flex justify-center items-center h-full text-red-500">{t('Error')}: {error}</div>;
+    return <div className="flex justify-center items-center h-full text-red-500">{t('エラー')}: {error}</div>;
   }
 
   return (
@@ -212,15 +238,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           <Button onClick={() => setShowFileNames(!showFileNames)}>
             {showFileNames ? t('ファイル名を非表示') : t('ファイル名を表示')}
           </Button>
-          {/* {['FileTree', 'BusinessStructure', 'Dependencies', 'DataStructure', 'Similarity', 'ImmuneSystem', 'Multimedia'].map((structure) => (
-            <Button
-              key={structure}
-              onClick={() => setSelectedStructure(structure)}
-              className={selectedStructure === structure ? 'bg-[#4a4a4a] text-white' : 'bg-[#2a2a2a] text-[#a0a0a0] hover:bg-[#3a3a3a]'}
-            >
-              {t(structure)}
-            </Button>
-          ))} */}
         </div>
       </div>
       <div className="flex-grow flex">
@@ -233,11 +250,21 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               onFileChange={handleFileChange}
             />
           ))}
-          <div className="flex-grow">
+          <div className="flex-grow relative">
             <ForceGraph
               ref={fgRef}
               {...forceGraphConfig}
             />
+            {clickedNode && (
+              <div
+                className="absolute bg-[#2a2a2a] rounded shadow-lg p-2"
+                style={{ left: menuPosition.x, top: menuPosition.y }}
+              >
+                <Button onClick={() => highlightNode(clickedNode)}>{t('ノードハイライト')}</Button>
+                <Button onClick={() => getNodeSurroundings(clickedNode)}>{t('ノード周辺取得')}</Button>
+                <Button onClick={() => showEditor(clickedNode)}>{t('エディタ表示')}</Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
