@@ -1,17 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
+import { fetchFileContent } from '@/utils/api';
 
 const MockEditor = ({ node, onClose }) => {
   const [position, setPosition] = useState({ x: window.innerWidth * 2/3, y: window.innerHeight / 2 - 250 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [fileContent, setFileContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
     setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
   };
 
-const handleMouseMove = (e) => {
+  const handleMouseMove = (e) => {
     if (isDragging) {
       setPosition({
         x: Math.max(0, Math.min(e.clientX - dragStart.x, window.innerWidth - 600)),
@@ -33,6 +36,22 @@ const handleMouseMove = (e) => {
     };
   }, [isDragging]);
 
+  useEffect(() => {
+    const loadFileContent = async () => {
+      try {
+        setIsLoading(true);
+        const content = await fetchFileContent(node.path);
+        setFileContent(content);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFileContent();
+  }, [node.path]);
+
   return (
     <div 
       className="fixed bg-black bg-opacity-30 flex items-center justify-center z-50"
@@ -51,24 +70,17 @@ const handleMouseMove = (e) => {
           <button onClick={onClose} className="text-white text-sm hover:bg-[#3c3c3c] px-2 py-1 rounded">閉じる</button>
         </div>
         <pre className="flex-grow bg-[#2d2d2d] bg-opacity-30 p-3 rounded text-white text-sm overflow-auto">
-          <textarea
-            className="w-full h-full bg-transparent resize-none focus:outline-none"
-            defaultValue={`// ${node.name} の内容がここに表示されます
-// 実際のファイル内容を取得するには、
-// バックエンドAPIとの連携が必要です。
-
-// README.md の内容がここに表示されます
-// 実際のファイル内容を取得するには、
-// バックエンドAPIとの連携が必要です。
-
-// ここにファイルの内容が表示されます。
-// 実際のプロジェクトでは、このテキストエリアに
-// 選択されたファイルの内容が動的に読み込まれます。
-
-// エディタの機能をさらに拡張する場合は、
-// シンタックスハイライトやコード補完などの
-// 機能を追加することができます。`}
-          />
+          {isLoading ? (
+            <p>ファイル内容を読み込み中...</p>
+          ) : error ? (
+            <p className="text-red-500">エラー: {error}</p>
+          ) : (
+            <textarea
+              className="w-full h-full bg-transparent resize-none focus:outline-none"
+              value={fileContent}
+              readOnly
+            />
+          )}
         </pre>
       </div>
     </div>

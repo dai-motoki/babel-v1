@@ -8,7 +8,7 @@ const App = () => {
     // アプリ一覧を取得する関数
     const fetchApps = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/generated-dirs');
+        const response = await fetch('http://localhost:8000/api/files/generated-dirs');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

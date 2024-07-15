@@ -104,13 +104,35 @@ export const sendChatMessage = (projectId, message) => post(`/projects/${project
 // ディレクトリ構造を取得
 export const fetchDirectoryStructure = async (pathType) => {
   try {
-    const response = await fetch(`http://localhost:8000/directory_structure?path_type=${pathType}`);
+    const response = await fetch(`http://localhost:8000/api/files/directory_structure?path_type=${pathType}`);
     if (!response.ok) {
       throw new Error('ディレクトリ構造の取得に失敗しました');
     }
     return await response.json();
   } catch (error) {
     console.error('ディレクトリ構造の取得中にエラーが発生しました:', error);
+    throw error;
+  }
+};
+
+// ファイルの内容を取得
+export const fetchFileContent = async (filePath) => {
+  try {
+    const response = await fetch(`http://localhost:8000/api/files/content/${encodeURIComponent(filePath)}`, {
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('ファイルの内容を取得できませんでした');
+    }
+
+    const data = await response.json();
+    console.log(data);
+    return data.content;
+  } catch (error) {
+    console.error('ファイルの内容の取得中にエラーが発生しました:', error);
     throw error;
   }
 };
@@ -127,4 +149,5 @@ export default {
   uploadFile,
   sendChatMessage,
   fetchDirectoryStructure,
+  fetchFileContent
 };
