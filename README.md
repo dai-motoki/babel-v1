@@ -40,6 +40,7 @@ cd src/backend
 
 ```bash
 uvicorn main:app --reload
+uvicorn file_watcher:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 3. webソケットを起動します：
