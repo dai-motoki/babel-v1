@@ -1,4 +1,3 @@
-
 import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import ForceGraph from './ForceGraph';
@@ -25,7 +24,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [filteredNodes, setFilteredNodes] = useState([]);
   const [filteredLinks, setFilteredLinks] = useState([]);
   const [showFileNames, setShowFileNames] = useState(true);
-  const [selectedNode, setSelectedNode] = useState(null);
 
   const loadDirectoryStructure = useCallback(async () => {
     try {
@@ -58,10 +56,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   const handleClick = useCallback((node) => {
     console.log('Clicked node:', node);
-    // if (fgRef.current) {
-    //   const fg = fgRef.current;
-    //   fg.zoom(4, 2000);
-    // }
 
     const highlightedNodes = new Set();
     const highlightedLinks = new Set();
@@ -84,15 +78,11 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     setFilteredLinks(Array.from(highlightedLinks));
 
     setSelectedNodes(prevSelected => {
-      const index = prevSelected.findIndex(n => n.id === node.id);
-      if (index > -1) {
-        return prevSelected.filter(n => n.id !== node.id);
-      } else {
+      if (!prevSelected.some(n => n.id === node.id)) {
         return [...prevSelected, node];
       }
+      return prevSelected;
     });
-
-    setSelectedNode(node);
   }, [directoryStructure]);
 
   const handleSearch = useCallback((query) => {
@@ -229,12 +219,13 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         </div>
       </div>
       <RecentChanges changes={changes} />
-      {selectedNode && (
+      {selectedNodes.map((node) => (
         <MockEditor
-          node={selectedNode}
-          onClose={() => setSelectedNode(null)}
+          key={node.id}
+          node={node}
+          onClose={() => setSelectedNodes(prev => prev.filter(n => n.id !== node.id))}
         />
-      )}
+      ))}
       <div className="flex-grow">
         <ForceGraph
           ref={fgRef}
