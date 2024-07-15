@@ -27,7 +27,7 @@ observer = Observer()
 # 監視対象のディレクトリを絶対パスで指定
 current_dir = os.path.dirname(os.path.abspath(__file__))
 generated_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "generated"))
-src_dir = os.path.abspath(os.path.join(current_dir, "..", ".."))
+src_dir = os.path.abspath(os.path.join(current_dir, "..", "..", "src"))
 
 observer.schedule(file_handler, path=generated_dir, recursive=True)
 observer.schedule(file_handler, path=src_dir, recursive=True)

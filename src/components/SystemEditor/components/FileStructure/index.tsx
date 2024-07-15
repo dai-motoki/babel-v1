@@ -214,7 +214,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           <Button onClick={() => setShowFileNames(!showFileNames)}>
             {showFileNames ? t('ファイル名を非表示') : t('ファイル名を表示')}
           </Button>
-          {['FileTree', 'BusinessStructure', 'Dependencies', 'DataStructure', 'Similarity', 'ImmuneSystem', 'Multimedia'].map((structure) => (
+          {/* {['FileTree', 'BusinessStructure', 'Dependencies', 'DataStructure', 'Similarity', 'ImmuneSystem', 'Multimedia'].map((structure) => (
             <Button
               key={structure}
               onClick={() => setSelectedStructure(structure)}
@@ -222,7 +222,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
             >
               {t(structure)}
             </Button>
-          ))}
+          ))} */}
         </div>
       </div>
       <div className="flex-grow flex">
