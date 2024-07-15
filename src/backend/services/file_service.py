@@ -159,7 +159,7 @@ from models.file import FileModel
 from utils.file_operations import get_file_size, ensure_directory_exists, read_file, write_file, append_to_file
 
 class FileService:
-    def __init__(self, upload_dir="uploads"):
+    def __init__(self, upload_dir="/Users/motokidaisuke/babel-v1/src/"):
         self.upload_dir = upload_dir
         ensure_directory_exists(self.upload_dir)
 

@@ -14,6 +14,71 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+from fastapi import APIRouter, UploadFile, File, HTTPException, Query
+from services.file_service import FileService
+from models.file import FileModel, FileEdit
+
+router = APIRouter(prefix="/api/files", tags=["files"])
+file_service = FileService()
+
+
+router = APIRouter(prefix="/api/files", tags=["files"])
+file_service = FileService(upload_dir="../")  # ベースディレクトリを設定
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        result = await file_service.save_file(file)
+        return {"filename": result.filename, "size": result.size}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/list")
+async def list_files():
+    files = await file_service.list_files()
+    return {"files": [FileModel(filename=f.filename, size=f.size).dict() for f in files]}
+
+@router.get("/content/{file_path:path}")
+async def get_file_content(file_path: str):
+    try:
+        content = await file_service.get_file_content(file_path)
+        return {"filename": file_path, "content": content}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/edit/{filename}")
+async def edit_file(filename: str, edit: FileEdit):
+    try:
+        await file_service.edit_file(filename, edit.line_number, edit.new_content)
+        return {"message": f"File {filename} edited successfully"}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/append/{filename}")
+async def append_to_file(filename: str, content: str = Query(...)):
+    try:
+        await file_service.append_to_file(filename, content)
+        return {"message": f"Content appended to {filename} successfully"}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+
+@router.delete("/delete/{filename}")
+async def delete_file(filename: str):
+    try:
+        await file_service.delete_file(filename)
+        return {"message": f"File {filename} deleted successfully"}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+
+
+
+
+
+
 @router.post("/hello")
 async def hello():
     return {"message": "hello"}
