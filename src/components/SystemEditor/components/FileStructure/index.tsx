@@ -58,10 +58,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   const handleClick = useCallback((node) => {
     console.log('Clicked node:', node);
-    if (fgRef.current) {
-      const fg = fgRef.current;
-      fg.zoom(4, 2000);
-    }
+    // if (fgRef.current) {
+    //   const fg = fgRef.current;
+    //   fg.zoom(4, 2000);
+    // }
 
     const highlightedNodes = new Set();
     const highlightedLinks = new Set();
