@@ -1,20 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Send } from 'lucide-react';
+import { X, Send, ChevronDown, ChevronRight } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
-import ReactMarkdown from 'react-markdown'; // react-markdownをインポート
+import ReactMarkdown from 'react-markdown';
+import { Loader2, CheckCircle } from 'lucide-react';
 
-// 型定義を追加
+// Loader2とCheckCircleコンポーネントをインポートします。
+// これらは、処理中の状態と完了状態を視覚的に表現するために使用されます。
+
+
 interface AIMessage {
   type: 'system' | 'user' | 'ai';
   content: string;
-  filePath?: string; // ファイルパスを追加
+  filePath?: string;
+  status?: 'pending' | 'completed';
+  isExpanded?: boolean;
 }
 
 interface AIChatProps {
-  nodes: any[]; // nodesの型は適切に定義してください
+  nodes: any[];
   onClose: () => void;
 }
 
@@ -27,15 +33,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
-
-  // positionステートを追加
   const [position, setPosition] = useState({ x: 20, y: 20 });
 
-  // useDraggableフックを修正
-  const { onMouseDown } = useDraggable(chatBoxRef, setPosition, 5); // 5ピクセルの閾値を追加
+  const { onMouseDown } = useDraggable(chatBoxRef, setPosition, 5);
 
   useEffect(() => {
-    // チャットが更新されたら一番下までスクロール
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
@@ -51,21 +53,30 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     setIsLoading(true);
 
     try {
+      const filePaths = nodes.map((node) => node.id);
+      filePaths.forEach((filePath) => {
+        setMessages((prev) => [
+          ...prev,
+          { type: 'ai', content: '', filePath, status: 'pending', isExpanded: false },
+        ]);
+      });
+
       const response = await axios.post('http://localhost:8000/v1/ai-file-ops/multi-ai-update', {
         version_control: false,
-        file_paths: nodes.map((node) => node.id),
+        file_paths: filePaths,
         change_type: 'smart',
         execution_mode: 'parallel',
         feature_request: input,
       });
 
-      // レスポンスの各生成テキストを別々のAIメッセージとして追加
       response.data.result.forEach((result: any) => {
-        setMessages((prev) => [...prev, { 
-          type: 'ai', 
-          content: result.result.generated_text,
-          filePath: result.file_path
-        }]);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.filePath === result.file_path
+              ? { ...msg, content: result.result.generated_text, status: 'completed' }
+              : msg
+          )
+        );
       });
     } catch (error) {
       console.error('AI response error:', error);
@@ -78,8 +89,14 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     }
   };
 
+  const toggleExpand = (index: number) => {
+    setMessages((prev) =>
+      prev.map((msg, i) => (i === index ? { ...msg, isExpanded: !msg.isExpanded } : msg))
+    );
+  };
+
   return (
-    <div 
+    <div
       ref={chatBoxRef}
       style={{
         position: 'absolute',
@@ -88,10 +105,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
       }}
       className="w-80 h-96 bg-[#1e1e1e] bg-opacity-90 text-[#d4d4d4] rounded-lg shadow-lg flex flex-col overflow-hidden"
     >
-      <div 
+      <div
         className="flex justify-between items-center p-2 bg-[#2d2d2d] text-[#d4d4d4] cursor-move"
         onMouseDown={(e) => {
-          e.preventDefault(); // デフォルトの動作を防止
+          e.preventDefault();
           onMouseDown(e);
         }}
       >
@@ -112,15 +129,44 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                 : 'bg-[#2d2d2d] text-[#d4d4d4] text-center w-full'
             }`}
           >
-            {message.filePath && (
-              <div className="text-[10px] mt-1 text-gray-400">
-                {message.filePath}
+            {message.type === 'ai' && message.filePath && (
+              <div
+                className="flex items-center cursor-pointer hover:bg-[#4c4c4c] rounded p-1 transition-colors duration-200"
+                onClick={() => toggleExpand(index)}
+              >
+                {message.isExpanded ? (
+                  <ChevronDown className="w-4 h-4 mr-2 text-[#0e639c]" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 mr-2 text-[#0e639c]" />
+                )}
+                <span className="font-bold flex-grow">
+                  {message.filePath.length > 30
+                    ? `...${message.filePath.slice(-30)}`
+                    : message.filePath}
+                </span>
+                <span className="ml-2 text-[10px] flex items-center">
+                  {message.status === 'pending' ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-1 animate-spin text-[#0e639c]" />
+                      処理中...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5 mr-1 text-green-500" />
+                      完了
+                    </>
+                  )}
+                </span>
               </div>
             )}
-            {message.type === 'ai' ? (
-              <ReactMarkdown>{message.content}</ReactMarkdown>
-            ) : (
-              message.content
+            {(message.type !== 'ai' || message.isExpanded) && (
+              <div className={`mt-2 ${message.isExpanded ? 'animate-fadeIn' : ''}`}>
+                {message.type === 'ai' ? (
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                ) : (
+                  message.content
+                )}
+              </div>
             )}
           </div>
         ))}
@@ -144,7 +190,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
           disabled={isLoading}
           className="bg-[#0e639c] text-white rounded-r px-3 py-1 hover:bg-[#1177bb] text-xs"
         >
-          <Send className="w-3 h-3" />
+          <Send className="w-4 h-4" />
         </Button>
       </form>
     </div>
