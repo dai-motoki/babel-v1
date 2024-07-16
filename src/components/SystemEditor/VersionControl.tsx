@@ -281,7 +281,7 @@ export function VersionControl() {
       
       {selectedSystem  ? (
         <>
-          <div className="relative h-screen w-full mb-6">
+          <div className="relative h-[85vh] w-full mb-6">
             <FileStructure 
               ファイル構造データ={ファイル構造データ} 
               onNodeClick={ノード選択処理} 

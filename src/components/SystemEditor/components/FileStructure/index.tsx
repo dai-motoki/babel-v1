@@ -12,6 +12,9 @@ import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
 import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer } from 'lucide-react';
 
+// 新しく追加: AIチャットコンポーネントのインポート
+import AIChat from './AIChat';
+
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();
   const overlayRef = useRef();
@@ -33,6 +36,9 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [selectionStart, setSelectionStart] = useState(null);
   const [selectionEnd, setSelectionEnd] = useState(null);
   const [selectedNodesInBox, setSelectedNodesInBox] = useState([]);
+
+  // 新しく追加: AIチャットの状態
+  const [showAIChat, setShowAIChat] = useState(false);
 
   // ディレクトリ構造を読み込む関数
   const loadDirectoryStructure = useCallback(async () => {
@@ -216,6 +222,11 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     setSelectedNodesInBox([]);
   };
 
+  // 新しく追加: ハイライト済みノードに対してAIチャットを開始する関数
+  const startAIChatWithHighlightedNodes = () => {
+    setShowAIChat(true);
+  };
+
   const forceGraphConfig = useMemo(() => ({
     graphData: { nodes: filteredNodes, links: filteredLinks },
     nodeLabel: "name",
@@ -328,6 +339,13 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               <li key={node.id}>{node.id || node.name}</li>
             ))}
           </ul>
+          {/* 新しく追加: AIチャット開始ボタン */}
+          {highlightedNodes.length > 0 && (
+            <Button onClick={startAIChatWithHighlightedNodes} className="mt-2 text-xs flex items-center">
+              <MessageCircle className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
+              <span>{t('AIチャットを開始')}</span>
+            </Button>
+          )}
         </div>
       </div>
       <div className="flex items-center justify-between p-3">
@@ -442,6 +460,13 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           </div>
         </div>
       </div>
+      {/* 新しく追加: AIチャットコンポーネント */}
+      {showAIChat && (
+        <AIChat
+          nodes={highlightedNodes}
+          onClose={() => setShowAIChat(false)}
+        />
+      )}
     </div>
   );
 });

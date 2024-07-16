@@ -3,22 +3,29 @@ import { useTranslation } from 'react-i18next';
 import { X, Send } from 'lucide-react';
 import Button from '../common/Button';
 
-const AIChat = ({ nodes, onClose }) => {
+// 型定義を追加
+interface AIMessage {
+  type: 'system' | 'user' | 'ai';
+  content: string;
+}
+
+interface AIChatProps {
+  nodes: any[]; // nodesの型は適切に定義してください
+  onClose: () => void;
+}
+
+const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const { t } = useTranslation();
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<AIMessage[]>([
+    { type: 'system', content: 'ハイライトされたノードに関する質問をどうぞ。' },
+    { type: 'user', content: 'このプロジェクトの構造について教えてください。' },
+    { type: 'ai', content: 'このプロジェクトは主にReactを使用したフロントエンド構造になっています。src/componentsディレクトリには様々なReactコンポーネントが含まれており、その中にSystemEditorという大きなコンポーネントがあります。' },
+    { type: 'user', content: 'SystemEditorの主な機能は何ですか？' },
+    { type: 'ai', content: 'SystemEditorは、プロジェクトのファイル構造を視覚化し、編集するための主要なコンポーネントです。ForceGraphを使用してファイル間の関係を表示し、ファイルの内容を編集するためのエディタも含んでいます。' },
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const chatContainerRef = useRef(null);
-
-  useEffect(() => {
-    // 初期メッセージを設定
-    setMessages([
-      {
-        type: 'system',
-        content: t('ハイライトされたノードに関する質問をどうぞ。'),
-      },
-    ]);
-  }, [t]);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // チャットが更新されたら一番下までスクロール
@@ -27,11 +34,11 @@ const AIChat = ({ nodes, onClose }) => {
     }
   }, [messages]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    const userMessage = { type: 'user', content: input };
+    const userMessage: AIMessage = { type: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -52,30 +59,30 @@ const AIChat = ({ nodes, onClose }) => {
   };
 
   // この関数は実際のAI APIに置き換える必要があります
-  const fetchAIResponse = async (input, nodes) => {
+  const fetchAIResponse = async (input: string, nodes: any[]): Promise<string> => {
     // ダミーの非同期処理
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return `これはダミーの応答です。入力: "${input}"。ノード数: ${nodes.length}`;
   };
 
   return (
-    <div className="fixed bottom-0 right-0 w-96 h-128 bg-[#2a2a2a] text-[#d4d4d4] rounded-tl-lg shadow-lg flex flex-col">
-      <div className="flex justify-between items-center p-3 border-b border-[#3c3c3c]">
-        <h3 className="text-lg font-medium">{t('AIチャット')}</h3>
+    <div className="absolute bottom-4 right-4 w-80 h-96 bg-[#1e1e1e] bg-opacity-90 text-[#d4d4d4] rounded-lg shadow-lg flex flex-col overflow-hidden">
+      <div className="flex justify-between items-center p-2 bg-[#2d2d2d] text-[#d4d4d4]">
+        <h3 className="text-sm font-medium">{t('AIチャット')}</h3>
         <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white">
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </Button>
       </div>
-      <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-3 space-y-3">
+      <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-2 space-y-2">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`p-2 rounded ${
+            className={`p-2 rounded-md text-xs ${
               message.type === 'user'
-                ? 'bg-[#3c3c3c] ml-auto'
+                ? 'bg-[#264f78] text-white ml-auto max-w-[70%]'
                 : message.type === 'ai'
-                ? 'bg-[#4a4a4a]'
-                : 'bg-[#2a2a2a] text-center'
+                ? 'bg-[#3c3c3c] text-[#d4d4d4] mr-auto max-w-[70%]'
+                : 'bg-[#2d2d2d] text-[#d4d4d4] text-center w-full'
             }`}
           >
             {message.content}
@@ -83,25 +90,25 @@ const AIChat = ({ nodes, onClose }) => {
         ))}
         {isLoading && (
           <div className="text-center">
-            <span className="animate-pulse">{t('AIが考え中...')}</span>
+            <span className="animate-pulse text-xs">{t('AIが考え中...')}</span>
           </div>
         )}
       </div>
-      <form onSubmit={handleSubmit} className="p-3 border-t border-[#3c3c3c] flex">
+      <form onSubmit={handleSubmit} className="p-2 border-t border-[#3c3c3c] flex">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('メッセージを入力...')}
-          className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-l px-3 py-2 focus:outline-none"
+          className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-l px-2 py-1 text-xs focus:outline-none"
           disabled={isLoading}
         />
         <Button
-          type="submit"
+          onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-blue-500 text-white rounded-r px-4 py-2 hover:bg-blue-600"
+          className="bg-[#0e639c] text-white rounded-r px-3 py-1 hover:bg-[#1177bb] text-xs"
         >
-          <Send className="w-5 h-5" />
+          <Send className="w-3 h-3" />
         </Button>
       </form>
     </div>
