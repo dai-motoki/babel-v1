@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Send, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
-import { Loader2, CheckCircle } from 'lucide-react';
 
 // Loader2とCheckCircleコンポーネントをインポートします。
 // これらは、処理中の状態と完了状態を視覚的に表現するために使用されます。
@@ -130,33 +129,29 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             }`}
           >
             {message.type === 'ai' && message.filePath && (
-              <div
-                className="flex items-center cursor-pointer hover:bg-[#4c4c4c] rounded p-1 transition-colors duration-200"
-                onClick={() => toggleExpand(index)}
-              >
-                {message.isExpanded ? (
-                  <ChevronDown className="w-4 h-4 mr-2 text-[#0e639c]" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 mr-2 text-[#0e639c]" />
-                )}
+              <div className="flex items-center justify-between">
                 <span className="font-bold flex-grow">
                   {message.filePath.length > 30
                     ? `...${message.filePath.slice(-30)}`
                     : message.filePath}
                 </span>
-                <span className="ml-2 text-[10px] flex items-center">
+                <div className="flex items-center">
                   {message.status === 'pending' ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-1 animate-spin text-[#0e639c]" />
-                      処理中...
-                    </>
+                    <Loader2 className="w-5 h-5 animate-spin text-[#0e639c]" />
                   ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5 mr-1 text-green-500" />
-                      完了
-                    </>
+                    <CheckCircle className="w-5 h-5 text-green-500" />
                   )}
-                </span>
+                  <Button
+                    onClick={() => toggleExpand(index)}
+                    className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
+                  >
+                    {message.isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-[#0e639c]" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-[#0e639c]" />
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
             {(message.type !== 'ai' || message.isExpanded) && (
