@@ -23,7 +23,8 @@ async def ai_update(file_path: str, version_control: bool, change_type: str, fea
     full_path = os.path.join(BASE_PATH, file_path)
     with open(full_path, 'r') as file:
         content = file.read()
-    prompt = f"以下のファイル内容を{change_type}の方法で更新し、次の機能追加要望を実装してください：{feature_request}\n\n{content}"
+    # prompt = f"以下のファイル内容を{change_type}の方法で更新し、次の機能追加要望を実装してください：{feature_request}\n\n{content}"
+    prompt = f"\n\n{content} \n\n に対して、{feature_request}"
     result = await generate_text_anthropic(prompt)
     if version_control:
         await version_control(file_path, "AI更新")
@@ -73,12 +74,6 @@ async def multi_ai_analyze(file_paths: List[str], version_control: bool, analysi
     return results
 
 async def multi_ai_update(file_paths: List[str], version_control: bool, change_type: str, execution_mode: str, feature_request: str):
-    "aaaaa"
-    print("file_paths", file_paths)
-    print("version_control", version_control)
-    print("change_type", change_type)
-    print("execution_mode", execution_mode)
-    print("feature_request", feature_request)
     tasks = [ai_update(file_path, version_control, change_type, feature_request) for file_path in file_paths]
     if execution_mode == "parallel":
         results = await asyncio.gather(*tasks)

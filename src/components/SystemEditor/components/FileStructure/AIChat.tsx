@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Send } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
+import axios from 'axios';
 
 // 型定義を追加
 interface AIMessage {
@@ -19,10 +20,6 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<AIMessage[]>([
     { type: 'system', content: 'ハイライトされたノードに関する質問をどうぞ。' },
-    { type: 'user', content: 'このプロジェクトの構造について教えてください。' },
-    { type: 'ai', content: 'このプロジェクトは主にReactを使用したフロントエンド構造になっています。src/componentsディレクトリには様々なReactコンポーネントが含まれており、その中にSystemEditorという大きなコンポーネントがあります。' },
-    { type: 'user', content: 'SystemEditorの主な機能は何ですか？' },
-    { type: 'ai', content: 'SystemEditorは、プロジェクトのファイル構造を視覚化し、編集するための主要なコンポーネントです。ForceGraphを使用してファイル間の関係を表示し、ファイルの内容を編集するためのエディタも含んでいます。' },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -52,9 +49,18 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     setIsLoading(true);
 
     try {
-      // ここでAI APIを呼び出す
-      const aiResponse = await fetchAIResponse(input, nodes);
-      setMessages((prev) => [...prev, { type: 'ai', content: aiResponse }]);
+      const response = await axios.post('http://localhost:8000/v1/ai-file-ops/multi-ai-update', {
+        version_control: false,
+        file_paths: nodes.map((node) => node.id),
+        change_type: 'smart',
+        execution_mode: 'parallel',
+        feature_request: input,
+      });
+
+      // レスポンスの各生成テキストを別々のAIメッセージとして追加
+      response.data.result.forEach((result: any) => {
+        setMessages((prev) => [...prev, { type: 'ai', content: result.generated_text }]);
+      });
     } catch (error) {
       console.error('AI response error:', error);
       setMessages((prev) => [
@@ -64,13 +70,6 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // この関数は実際のAI APIに置き換える必要があります
-  const fetchAIResponse = async (input: string, nodes: any[]): Promise<string> => {
-    // ダミーの非同期処理
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return `これはダミーの応答です。入力: "${input}"。ノード数: ${nodes.length}`;
   };
 
   return (
