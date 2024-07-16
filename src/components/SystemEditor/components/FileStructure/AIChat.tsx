@@ -29,8 +29,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
 
-  // ドラッグ可能な機能を追加
-  const { position, onMouseDown } = useDraggable(chatBoxRef);
+  // positionステートを追加
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+
+  // useDraggableフックを修正
+  const { onMouseDown } = useDraggable(chatBoxRef, setPosition, 5); // 5ピクセルの閾値を追加
 
   useEffect(() => {
     // チャットが更新されたら一番下までスクロール
@@ -75,18 +78,20 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
       ref={chatBoxRef}
       style={{
         position: 'absolute',
-        right: '20px',
-        top: '20px',
-        cursor: 'move',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
       }}
       className="w-80 h-96 bg-[#1e1e1e] bg-opacity-90 text-[#d4d4d4] rounded-lg shadow-lg flex flex-col overflow-hidden"
     >
       <div 
-        className="flex justify-between items-center p-2 bg-[#2d2d2d] text-[#d4d4d4]"
-        onMouseDown={onMouseDown}
+        className="flex justify-between items-center p-2 bg-[#2d2d2d] text-[#d4d4d4] cursor-move"
+        onMouseDown={(e) => {
+          e.preventDefault(); // デフォルトの動作を防止
+          onMouseDown(e);
+        }}
       >
         <h3 className="text-sm font-medium">{t('AIチャット')}</h3>
-        <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white">
+        <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white cursor-pointer">
           <X className="w-4 h-4" />
         </Button>
       </div>
