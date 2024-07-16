@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Send } from 'lucide-react';
 import Button from '../common/Button';
+import { useDraggable } from '@/hooks/useDraggable';
 
 // 型定義を追加
 interface AIMessage {
@@ -26,6 +27,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const chatBoxRef = useRef<HTMLDivElement>(null);
+
+  // ドラッグ可能な機能を追加
+  const { position, onMouseDown } = useDraggable(chatBoxRef);
 
   useEffect(() => {
     // チャットが更新されたら一番下までスクロール
@@ -66,8 +71,20 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   };
 
   return (
-    <div className="absolute bottom-4 right-4 w-80 h-96 bg-[#1e1e1e] bg-opacity-90 text-[#d4d4d4] rounded-lg shadow-lg flex flex-col overflow-hidden">
-      <div className="flex justify-between items-center p-2 bg-[#2d2d2d] text-[#d4d4d4]">
+    <div 
+      ref={chatBoxRef}
+      style={{
+        position: 'absolute',
+        right: '20px',
+        top: '20px',
+        cursor: 'move',
+      }}
+      className="w-80 h-96 bg-[#1e1e1e] bg-opacity-90 text-[#d4d4d4] rounded-lg shadow-lg flex flex-col overflow-hidden"
+    >
+      <div 
+        className="flex justify-between items-center p-2 bg-[#2d2d2d] text-[#d4d4d4]"
+        onMouseDown={onMouseDown}
+      >
         <h3 className="text-sm font-medium">{t('AIチャット')}</h3>
         <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white">
           <X className="w-4 h-4" />
