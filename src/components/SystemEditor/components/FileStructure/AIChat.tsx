@@ -4,6 +4,7 @@ import { X, Send } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown'; // react-markdownをインポート
 
 // 型定義を追加
 interface AIMessage {
@@ -116,7 +117,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                 {message.filePath}
               </div>
             )}
-            {message.content}
+            {message.type === 'ai' ? (
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            ) : (
+              message.content
+            )}
           </div>
         ))}
         {isLoading && (
