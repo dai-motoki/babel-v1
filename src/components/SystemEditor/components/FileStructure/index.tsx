@@ -320,12 +320,12 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           <RecentChanges changes={changes} />
         </div>
       </div>
-      <div className="absolute bottom-0 left-0 p-2 z-10">
+      <div className="absolute bottom-1/4 left-0 p-2 z-10">
         <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
           <h4 className="text-[#d4d4d4] font-medium mb-2">{t('ハイライト済みノード')}</h4>
           <ul className="text-[#d4d4d4] text-sm max-h-40 overflow-y-auto">
-            {highlightedNodes.map((node) => (
-              <li key={node.id}>{node.path || node.name}</li>
+            {highlightedNodes.map((node: any) => (
+              <li key={node.id}>{node.id || node.name}</li>
             ))}
           </ul>
         </div>
