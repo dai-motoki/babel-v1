@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List
 
 class AIBaseRequest(BaseModel):
-    version_control: bool = True
+    version_control: bool = False
 
 class AIAnalyzeRequest(AIBaseRequest):
     file_path: str
@@ -11,6 +11,7 @@ class AIAnalyzeRequest(AIBaseRequest):
 class AIUpdateRequest(AIBaseRequest):
     file_path: str
     change_type: str = "smart"
+    feature_request: str  # 機能追加要望を格納するフィールドを追加
 
 class AIRewriteRequest(AIBaseRequest):
     file_path: str
@@ -33,6 +34,7 @@ class MultiAIAnalyzeRequest(MultiAIBaseRequest):
 
 class MultiAIUpdateRequest(MultiAIBaseRequest):
     change_type: str = "smart"
+    feature_request: str  # 機能追加要望を格納するフィールドを追加
 
 class MultiAIRewriteRequest(MultiAIBaseRequest):
     rewrite_style: str = "balanced"

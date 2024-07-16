@@ -10,7 +10,7 @@ import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
-import { Highlighter, Network, Edit, MessageCircle, MousePointer } from 'lucide-react';
+import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer } from 'lucide-react';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();
@@ -401,6 +401,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                   <MessageCircle className="w-3 h-3 mr-2 text-red-200 opacity-50" />
                   <span>{t('会話する')}</span>
                 </Button>
+                <Button onClick={() => { console.log('コピーボタンがクリックされました'); setClickedNode(null); }} className="text-xs flex items-center">
+                  <Copy className="w-3 h-3 mr-2 text-purple-200 opacity-50" />
+                  <span>{t('コピー')}</span>
+                </Button>
+                <Button onClick={() => { console.log('削除ボタンがクリックされました'); setClickedNode(null); }} className="text-xs flex items-center">
+                  <Trash className="w-3 h-3 mr-2 text-red-500 opacity-50" />
+                  <span>{t('削除')}</span>
+                </Button>
               </div>
             )}
             {selectedNodesInBox.length > 0 && (
@@ -420,6 +428,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                 <Button onClick={() => handleSelectionAction('chat')} className="text-xs flex items-center">
                   <MessageCircle className="w-3 h-3 mr-2 text-red-200 opacity-50" />
                   <span>{t('会話する')}</span>
+                </Button>
+                <Button onClick={() => handleSelectionAction('copy')} className="text-xs flex items-center">
+                  <Copy className="w-3 h-3 mr-2 text-purple-200 opacity-50" />
+                  <span>{t('選択をコピー')}</span>
+                </Button>
+                <Button onClick={() => handleSelectionAction('delete')} className="text-xs flex items-center">
+                  <Trash className="w-3 h-3 mr-2 text-red-500 opacity-50" />
+                  <span>{t('選択を削除')}</span>
                 </Button>
               </div>
             )}
