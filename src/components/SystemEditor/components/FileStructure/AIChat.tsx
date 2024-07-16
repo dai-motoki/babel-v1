@@ -9,6 +9,7 @@ import axios from 'axios';
 interface AIMessage {
   type: 'system' | 'user' | 'ai';
   content: string;
+  filePath?: string; // ファイルパスを追加
 }
 
 interface AIChatProps {
@@ -59,7 +60,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
 
       // レスポンスの各生成テキストを別々のAIメッセージとして追加
       response.data.result.forEach((result: any) => {
-        setMessages((prev) => [...prev, { type: 'ai', content: result.generated_text }]);
+        setMessages((prev) => [...prev, { 
+          type: 'ai', 
+          content: result.result.generated_text,
+          filePath: result.file_path
+        }]);
       });
     } catch (error) {
       console.error('AI response error:', error);
@@ -106,6 +111,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                 : 'bg-[#2d2d2d] text-[#d4d4d4] text-center w-full'
             }`}
           >
+            {message.filePath && (
+              <div className="text-[10px] mt-1 text-gray-400">
+                {message.filePath}
+              </div>
+            )}
             {message.content}
           </div>
         ))}

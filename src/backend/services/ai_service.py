@@ -28,7 +28,7 @@ async def ai_update(file_path: str, version_control: bool, change_type: str, fea
     result = await generate_text_anthropic(prompt)
     if version_control:
         await version_control(file_path, "AI更新")
-    return result
+    return {"result": result, "file_path": file_path}
 
 async def ai_rewrite(file_path: str, version_control: bool, rewrite_style: str):
     full_path = os.path.join(BASE_PATH, file_path)
