@@ -102,53 +102,56 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         left: `${position.x}px`,
         top: `${position.y}px`,
       }}
-      className="w-80 h-96 bg-[#1e1e1e] bg-opacity-90 text-[#d4d4d4] rounded-lg shadow-lg flex flex-col overflow-hidden"
+      className="w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
     >
       <div
-        className="flex justify-between items-center p-2 bg-[#2d2d2d] text-[#d4d4d4] cursor-move"
+        className="flex justify-between items-center p-3 bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] cursor-move"
         onMouseDown={(e) => {
           e.preventDefault();
           onMouseDown(e);
         }}
       >
-        <h3 className="text-sm font-medium">{t('AIチャット')}</h3>
-        <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white cursor-pointer">
+        <h3 className="text-sm font-semibold flex items-center">
+          <span className="w-2 h-2 bg-[#0e639c] rounded-full mr-2"></span>
+          {t('AIチャット')}
+        </h3>
+        <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200">
           <X className="w-4 h-4" />
         </Button>
       </div>
-      <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-2 space-y-2">
+      <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[#4c4c4c] scrollbar-track-[#2d2d2d]">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`p-2 rounded-md text-xs ${
+            className={`p-3 rounded-lg text-sm ${
               message.type === 'user'
-                ? 'bg-[#264f78] text-white ml-auto max-w-[70%]'
+                ? 'bg-gradient-to-r from-[#264f78] to-[#1e3a5f] text-white ml-auto max-w-[75%]'
                 : message.type === 'ai'
-                ? 'bg-[#3c3c3c] text-[#d4d4d4] mr-auto max-w-[70%]'
-                : 'bg-[#2d2d2d] text-[#d4d4d4] text-center w-full'
+                ? 'bg-gradient-to-r from-[#3c3c3c] to-[#4c4c4c] text-[#d4d4d4] mr-auto max-w-[75%]'
+                : 'bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] text-center w-full'
             }`}
           >
             {message.type === 'ai' && message.filePath && (
-              <div className="flex items-center justify-between">
-                <span className="font-bold flex-grow">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#4c4c4c]">
+                <span className="font-bold text-xs truncate flex-grow mr-2">
                   {message.filePath.length > 30
                     ? `...${message.filePath.slice(-30)}`
                     : message.filePath}
                 </span>
                 <div className="flex items-center">
                   {message.status === 'pending' ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-[#0e639c]" />
+                    <Loader2 className="w-4 h-4 animate-spin text-[#0e639c]" />
                   ) : (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <CheckCircle className="w-4 h-4 text-green-500" />
                   )}
                   <Button
                     onClick={() => toggleExpand(index)}
                     className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
                   >
                     {message.isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-[#0e639c]" />
+                      <ChevronUp className="w-3 h-3 text-[#0e639c]" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-[#0e639c]" />
+                      <ChevronDown className="w-3 h-3 text-[#0e639c]" />
                     )}
                   </Button>
                 </div>
@@ -157,7 +160,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             {(message.type !== 'ai' || message.isExpanded) && (
               <div className={`mt-2 ${message.isExpanded ? 'animate-fadeIn' : ''}`}>
                 {message.type === 'ai' ? (
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                  <ReactMarkdown className="prose prose-invert max-w-none">{message.content}</ReactMarkdown>
                 ) : (
                   message.content
                 )}
@@ -167,23 +170,23 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         ))}
         {isLoading && (
           <div className="text-center">
-            <span className="animate-pulse text-xs">{t('AIが考え中...')}</span>
+            <span className="animate-pulse text-xs bg-[#3c3c3c] px-3 py-1 rounded-full">{t('AIが考え中...')}</span>
           </div>
         )}
       </div>
-      <form onSubmit={handleSubmit} className="p-2 border-t border-[#3c3c3c] flex">
+      <form onSubmit={handleSubmit} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('メッセージを入力...')}
-          className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-l px-2 py-1 text-xs focus:outline-none"
+          className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e639c] transition-all duration-200"
           disabled={isLoading}
         />
         <Button
           onClick={handleSubmit}
           disabled={isLoading}
-          className="bg-[#0e639c] text-white rounded-r px-3 py-1 hover:bg-[#1177bb] text-xs"
+          className="bg-gradient-to-r from-[#0e639c] to-[#1177bb] text-white rounded-r-lg px-4 py-2 hover:from-[#1177bb] hover:to-[#0e639c] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
         </Button>
