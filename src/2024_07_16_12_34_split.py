@@ -24,7 +24,7 @@ async def ai_analyze(file_path: str, version_control: bool, analysis_depth: str)
         await version_control(file_path, "AI analysis")
     return result
 
-async def ai_update(file_path: str, version_control: bool, change_type: str):
+async def ai_reply(file_path: str, version_control: bool, change_type: str):
     prompt = f"Update the file at {file_path} with change type {change_type}."
     result = await generate_text_anthropic(prompt)
     if version_control:
@@ -63,8 +63,8 @@ async def multi_ai_analyze(file_paths: List[str], version_control: bool, analysi
             results.append(await task)
     return results
 
-async def multi_ai_update(file_paths: List[str], version_control: bool, change_type: str, execution_mode: str):
-    tasks = [ai_update(file_path, version_control, change_type) for file_path in file_paths]
+async def multi_ai_reply(file_paths: List[str], version_control: bool, change_type: str, execution_mode: str):
+    tasks = [ai_reply(file_path, version_control, change_type) for file_path in file_paths]
     if execution_mode == "parallel":
         results = await asyncio.gather(*tasks)
     else:
@@ -105,8 +105,8 @@ from models.ai_request import (
     MultiAIAnalyzeRequest, MultiAIUpdateRequest, MultiAIRewriteRequest, MultiAIAppendRequest, MultiAIDependenciesRequest
 )
 from services.ai_service import (
-    ai_analyze, ai_update, ai_rewrite, ai_append, ai_analyze_dependencies,
-    multi_ai_analyze, multi_ai_update, multi_ai_rewrite, multi_ai_append, multi_ai_analyze_dependencies
+    ai_analyze, ai_reply, ai_rewrite, ai_append, ai_analyze_dependencies,
+    multi_ai_analyze, multi_ai_reply, multi_ai_rewrite, multi_ai_append, multi_ai_analyze_dependencies
 )
 from utils.version_control import version_control
 
@@ -131,7 +131,7 @@ async def multi_analyze_files(request: MultiAIAnalyzeRequest):
 @router.post("/ai-reply")
 async def update_file(request: AIUpdateRequest):
     try:
-        result = await ai_update(request.file_path, request.version_control, request.change_type)
+        result = await ai_reply(request.file_path, request.version_control, request.change_type)
         return {"message": "File updated successfully", "result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -139,7 +139,7 @@ async def update_file(request: AIUpdateRequest):
 @router.post("/multi-ai-reply")
 async def multi_update_files(request: MultiAIUpdateRequest):
     try:
-        result = await multi_ai_update(request.file_paths, request.version_control, request.change_type, request.execution_mode)
+        result = await multi_ai_reply(request.file_paths, request.version_control, request.change_type, request.execution_mode)
         return {"message": "Files updated successfully", "result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -18,7 +18,7 @@ async def ai_analyze(file_path: str, version_control: bool, analysis_depth: str)
         await version_control(file_path, "AI分析")
     return result
 
-async def ai_update(file_path: str, version_control: bool, change_type: str, feature_request: str):
+async def ai_reply(file_path: str, version_control: bool, change_type: str, feature_request: str):
     # 機能追加系
     full_path = os.path.join(BASE_PATH, file_path)
     with open(full_path, 'r') as file:
@@ -73,8 +73,8 @@ async def multi_ai_analyze(file_paths: List[str], version_control: bool, analysi
             results.append(await task)
     return results
 
-async def multi_ai_update(file_paths: List[str], version_control: bool, change_type: str, execution_mode: str, feature_request: str):
-    tasks = [ai_update(file_path, version_control, change_type, feature_request) for file_path in file_paths]
+async def multi_ai_reply(file_paths: List[str], version_control: bool, change_type: str, execution_mode: str, feature_request: str):
+    tasks = [ai_reply(file_path, version_control, change_type, feature_request) for file_path in file_paths]
     if execution_mode == "parallel":
         results = await asyncio.gather(*tasks)
     else:
