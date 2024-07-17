@@ -9,7 +9,6 @@ import ReactMarkdown from 'react-markdown';
 // Loader2とCheckCircleコンポーネントをインポートします。
 // これらは、処理中の状態と完了状態を視覚的に表現するために使用されます。
 
-
 interface AIMessage {
   type: 'system' | 'user' | 'ai';
   content: string;
@@ -26,7 +25,7 @@ interface AIChatProps {
 const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<AIMessage[]>([
-    { type: 'system', content: 'ハイライトされたノードに関する質問をどうぞ。' },
+    { type: 'system', content: 'ハイライトされたノードに関する質問をどうぞ。以下は質問の例です：' },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +34,14 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
 
   const { onMouseDown } = useDraggable(chatBoxRef, setPosition, 5);
+
+  const sampleQuestions = [
+    '主な目的は？',
+    '重要な関数は？',
+    '依存関係は？',
+    '改善点は？',
+    '他ファイルとの関連は？',
+  ];
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -94,6 +101,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     );
   };
 
+  const insertSampleQuestion = (question: string) => {
+    setInput(question);
+  };
+
   return (
     <div
       ref={chatBoxRef}
@@ -140,7 +151,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                 </span>
                 <div className="flex items-center">
                   {message.status === 'pending' ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-[#0e639c]" />
+                    <Loader2 className="w-4 h-4 animate-spin text-[#3b9cff]" />
                   ) : (
                     <CheckCircle className="w-4 h-4 text-green-500" />
                   )}
@@ -149,9 +160,9 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                     className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
                   >
                     {message.isExpanded ? (
-                      <ChevronUp className="w-3 h-3 text-[#0e639c]" />
+                      <ChevronUp className="w-3 h-3 text-[#3b9cff]" />
                     ) : (
-                      <ChevronDown className="w-3 h-3 text-[#0e639c]" />
+                      <ChevronDown className="w-3 h-3 text-[#3b9cff]" />
                     )}
                   </Button>
                 </div>
@@ -173,6 +184,17 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             <span className="animate-pulse text-xs bg-[#3c3c3c] px-3 py-1 rounded-full">{t('AIが考え中...')}</span>
           </div>
         )}
+      </div>
+      <div className="p-2 border-t border-[#3c3c3c] bg-[#2d2d2d] flex flex-wrap justify-center">
+        {sampleQuestions.map((question, index) => (
+          <button
+            key={index}
+            onClick={() => insertSampleQuestion(question)}
+            className="m-1 px-2 py-1 text-xs bg-[#3c3c3c] text-[#d4d4d4] rounded hover:bg-[#4c4c4c] transition-colors duration-200"
+          >
+            {question}
+          </button>
+        ))}
       </div>
       <form onSubmit={handleSubmit} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
         <input
