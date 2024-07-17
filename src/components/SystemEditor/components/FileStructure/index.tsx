@@ -144,7 +144,29 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       setSelectedNodesInPath([]);
       setSelectionPath([]);
     }
+    // セレクトモードの切り替え時にグラフの操作を制御
+    if (fgRef.current) {
+      fgRef.current.d3Force('center', null);
+      fgRef.current.d3Force('charge', null);
+      fgRef.current.d3Force('link', null);
+      fgRef.current.d3Force('collide', null);
+    }
   };
+
+  // const handleOverlayMouseDown = (event) => {
+  //   if (isSelectionMode) {
+  //     const { offsetX, offsetY } = event.nativeEvent;
+  //     setSelectionPath([{ x: offsetX, y: offsetY }]);
+  //     setSelectedNodesInPath([]);
+  //   }
+  // };
+
+  // const handleOverlayMouseMove = (event) => {
+  //   if (isSelectionMode && selectionPath.length > 0) {
+  //     const { offsetX, offsetY } = event.nativeEvent;
+  //     setSelectionPath(prevPath => [...prevPath, { x: offsetX, y: offsetY }]);
+  //   }
+  // };
 
   const handleOverlayMouseDown = (event) => {
     if (isSelectionMode) {
@@ -168,6 +190,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         return isPointInPolygon({ x, y }, selectionPath);
       });
       setSelectedNodesInPath(selectedNodes);
+      setSelectionPath([]);  // Clear the selection path
     }
   };
 
@@ -370,8 +393,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               {...forceGraphConfig}
             />
 
-
-
             {isSelectionMode && (
               <>
                 <div
@@ -384,22 +405,35 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                 {selectionPath.length > 0 && (
                   <div className="absolute inset-0 pointer-events-none">
                     <svg width="100%" height="100%">
+                      <filter id="glow">
+                        <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                        <feMerge>
+                          <feMergeNode in="coloredBlur"/>
+                          <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                      </filter>
                       <path
                         d={`M ${selectionPath.map(p => `${p.x},${p.y}`).join(' L ')}`}
                         fill="none"
-                        stroke="#4a90e2"
+                        stroke="url(#gradient)"
                         strokeWidth="2"
+                        filter="url(#glow)"
                       />
+                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#4a90e2" stopOpacity="1"/>
+                        <stop offset="50%" stopColor="#63b3ed" stopOpacity="1"/>
+                        <stop offset="100%" stopColor="#4a90e2" stopOpacity="1"/>
+                      </linearGradient>
                     </svg>
                   </div>
                 )}
               </>
             )}
 
-
-
-
             {clickedNode && !isSelectionMode && (
+
+
+
               <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ left: menuPosition.x, top: menuPosition.y, transform: 'translate(-50%, -100%)' }}>
                 <Button onClick={() => { highlightNode(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
                   <Highlighter className="w-3 h-3 mr-2 text-yellow-200 opacity-50" />
@@ -469,18 +503,3 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 });
 
 export default FileStructure;
-// ```
-
-// 主な変更点は以下の通りです：
-
-// 1. `forceGraphConfig` に `enableNodeDrag`, `enablePanInteraction`, `enableZoomInteraction` を追加し、これらを `!isSelectionMode` に設定しました。これにより、選択モードがオンの時にグラフの操作を無効化します。
-
-// 2. 四角形の選択を投げ縄的な選択に変更しました。`selectionStart` と `selectionEnd` の代わりに `selectionPath` を使用し、マウスの動きに応じて選択パスを更新します。
-
-// 3. `handleOverlayMouseMove` を修正し、マウスの動きに応じて `selectionPath` を更新するようにしました。
-
-// 4. 選択領域の描画を SVG パスを使用して行うように変更しました。これにより、自由な形状の選択が可能になります。
-
-// 5. `isPointInPolygon` 関数を追加し、ノードが選択領域内にあるかどうかを判定するようにしました。
-
-// これらの変更により、選択モードがオンの時にグラフが動かなくなり、また投げ縄的な自由形状での選択が可能になります。
