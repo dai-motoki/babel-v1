@@ -28,7 +28,7 @@ async def multi_analyze_files(request: MultiAIAnalyzeRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/ai-update", response_model=Dict[str, Any])
+@router.post("/ai-reply", response_model=Dict[str, Any])
 async def update_file(request: AIUpdateRequest):
     try:
         result = await ai_update(request.file_path, request.version_control, request.change_type, request.feature_request)
@@ -36,7 +36,7 @@ async def update_file(request: AIUpdateRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/multi-ai-update", response_model=Dict[str, Any])
+@router.post("/multi-ai-reply", response_model=Dict[str, Any])
 async def multi_update_files(request: MultiAIUpdateRequest):
     try:
         result = await multi_ai_update(request.file_paths, request.version_control, request.change_type, request.execution_mode, request.feature_request)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy } from 'lucide-react';
+import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Tool } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
@@ -56,7 +56,6 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     'ファイル分割（現在ディレクトリ）',
     'ファイル分割（ルートディレクトリ）',
     'リファクタリング',
-
   ];
 
   useEffect(() => {
@@ -65,7 +64,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     }
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, isProcessing: boolean = false) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -101,7 +100,8 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     setPendingRequests((prev) => [...prev, ...aiMessageIds]);
 
     try {
-      const response = await axios.post('http://localhost:8000/v1/ai-file-ops/multi-ai-update', {
+      const endpoint = isProcessing ? '/v1/ai-file-ops/multi-ai-process' : '/v1/ai-file-ops/multi-ai-reply';
+      const response = await axios.post(`http://localhost:8000${endpoint}`, {
         version_control: false,
         file_paths: filePaths,
         change_type: 'smart',
