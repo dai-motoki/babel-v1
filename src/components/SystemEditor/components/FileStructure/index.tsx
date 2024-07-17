@@ -153,21 +153,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   };
 
-  // const handleOverlayMouseDown = (event) => {
-  //   if (isSelectionMode) {
-  //     const { offsetX, offsetY } = event.nativeEvent;
-  //     setSelectionPath([{ x: offsetX, y: offsetY }]);
-  //     setSelectedNodesInPath([]);
-  //   }
-  // };
-
-  // const handleOverlayMouseMove = (event) => {
-  //   if (isSelectionMode && selectionPath.length > 0) {
-  //     const { offsetX, offsetY } = event.nativeEvent;
-  //     setSelectionPath(prevPath => [...prevPath, { x: offsetX, y: offsetY }]);
-  //   }
-  // };
-
   const handleOverlayMouseDown = (event) => {
     if (isSelectionMode) {
       const { offsetX, offsetY } = event.nativeEvent;
@@ -406,7 +391,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                   <div className="absolute inset-0 pointer-events-none">
                     <svg width="100%" height="100%">
                       <filter id="glow">
-                        <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                        <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
                         <feMerge>
                           <feMergeNode in="coloredBlur"/>
                           <feMergeNode in="SourceGraphic"/>
@@ -415,14 +400,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                       <path
                         d={`M ${selectionPath.map(p => `${p.x},${p.y}`).join(' L ')}`}
                         fill="none"
-                        stroke="url(#gradient)"
-                        strokeWidth="2"
+                        stroke="url(#goldenGradient)"
+                        strokeWidth="4"
                         filter="url(#glow)"
                       />
-                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#4a90e2" stopOpacity="1"/>
-                        <stop offset="50%" stopColor="#63b3ed" stopOpacity="1"/>
-                        <stop offset="100%" stopColor="#4a90e2" stopOpacity="1"/>
+                      <linearGradient id="goldenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#ffd700" stopOpacity="0.3"/>
+                        <stop offset="50%" stopColor="#fff8dc" stopOpacity="0.5"/>
+                        <stop offset="100%" stopColor="#ffd700" stopOpacity="0.3"/>
                       </linearGradient>
                     </svg>
                   </div>
