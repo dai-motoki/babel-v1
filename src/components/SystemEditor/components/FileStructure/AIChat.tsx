@@ -16,11 +16,17 @@ interface AIMessage {
   id: string;
 }
 
+interface FileTask {
+  filePath: string;
+  status: 'pending' | 'completed';
+}
+
 interface Task {
   id: string;
+  name: string;
   startTime: Date;
   endTime?: Date;
-  filePaths: string[];
+  fileTasks: FileTask[];
   status: 'pending' | 'completed';
 }
 
@@ -83,8 +89,9 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
 
     const newTask: Task = {
       id: userMessageId,
+      name: input,
       startTime: new Date(),
-      filePaths,
+      fileTasks: filePaths.map(filePath => ({ filePath, status: 'pending' })),
       status: 'pending',
     };
     setTasks((prev) => [...prev, newTask]);
@@ -108,12 +115,35 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
           )
         );
         setPendingRequests((prev) => prev.filter((id) => id !== aiMessageId));
+        
+        // タスクの進捗状況を更新
+        setTasks((prev) =>
+          prev.map((task) =>
+            task.id === userMessageId
+              ? {
+                  ...task,
+                  fileTasks: task.fileTasks.map((fileTask) =>
+                    fileTask.filePath === result.file_path
+                      ? { ...fileTask, status: 'completed' }
+                      : fileTask
+                  ),
+                }
+              : task
+          )
+        );
       });
 
+      // すべてのファイルタスクが完了したらタスク全体を完了とする
       setTasks((prev) =>
         prev.map((task) =>
           task.id === userMessageId
-            ? { ...task, endTime: new Date(), status: 'completed' }
+            ? {
+                ...task,
+                endTime: new Date(),
+                status: task.fileTasks.every((fileTask) => fileTask.status === 'completed')
+                  ? 'completed'
+                  : 'pending',
+              }
             : task
         )
       );
@@ -184,14 +214,27 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         <h2 className="text-lg font-bold mb-4">タスク一覧</h2>
         {tasks.map((task, index) => (
           <div key={task.id} className="mb-4 p-2 bg-[#2d2d2d] rounded">
-            <p>タスク番号: {index + 1}</p>
-            <p>開始時間: {task.startTime.toLocaleString()}</p>
-            <p>終了時間: {task.endTime ? task.endTime.toLocaleString() : '進行中'}</p>
-            <p>ステータス: {task.status === 'completed' ? '完了' : '進行中'}</p>
-            <p>ファイル:</p>
-            <ul className="list-disc pl-4">
-              {task.filePaths.map((filePath, i) => (
-                <li key={i} className="text-sm truncate">{filePath}</li>
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-semibold">タスク {index + 1}: {task.name}</p>
+              {task.status === 'completed' ? (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              ) : (
+                <Loader2 className="w-4 h-4 animate-spin text-[#3b9cff]" />
+              )}
+            </div>
+            <p className="text-xs">開始: {task.startTime.toLocaleString()}</p>
+            {task.endTime && <p className="text-xs">終了: {task.endTime.toLocaleString()}</p>}
+            <p className="text-xs mt-2">ファイル進捗:</p>
+            <ul className="list-disc pl-4 mt-1">
+              {task.fileTasks && task.fileTasks.map((fileTask, i) => (
+                <li key={i} className="text-xs flex items-center justify-between">
+                  <span className="truncate mr-2">{fileTask.filePath}</span>
+                  {fileTask.status === 'completed' ? (
+                    <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                  ) : (
+                    <Loader2 className="w-3 h-3 animate-spin text-[#3b9cff] flex-shrink-0" />
+                  )}
+                </li>
               ))}
             </ul>
           </div>
