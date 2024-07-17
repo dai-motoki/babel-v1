@@ -6,7 +6,7 @@ from models.ai_request import (
 )
 from services.ai_service import (
     ai_analyze, ai_reply, ai_rewrite, ai_append, ai_analyze_dependencies,
-    multi_ai_analyze, multi_ai_reply, multi_ai_rewrite, multi_ai_append, multi_ai_analyze_dependencies
+    multi_ai_analyze, multi_ai_reply, multi_ai_rewrite, multi_ai_append, multi_ai_analyze_dependencies, ai_process, multi_ai_process
 )
 from utils.version_control import version_control
 
@@ -44,6 +44,21 @@ async def multi_update_files(request: MultiAIUpdateRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/ai-process", response_model=Dict[str, Any])
+async def update_file(request: AIUpdateRequest):
+    try:
+        result = await ai_process(request.file_path, request.version_control, request.change_type, request.feature_request)
+        return {"message": "ファイルが正常に更新されました", "result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/multi-ai-process", response_model=Dict[str, Any])
+async def multi_update_files(request: MultiAIUpdateRequest):
+    try:
+        result = await multi_ai_process(request.file_paths, request.version_control, request.change_type, request.execution_mode, request.feature_request)
+        return {"message": "複数のファイルが正常に更新されました", "result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @router.post("/ai-rewrite", response_model=Dict[str, Any])
 async def rewrite_file(request: AIRewriteRequest):
     try:

@@ -30,6 +30,16 @@ async def ai_reply(file_path: str, version_control: bool, change_type: str, feat
         await version_control(file_path, "AI更新")
     return {"result": result, "file_path": file_path}
 
+async def multi_ai_reply(file_paths: List[str], version_control: bool, change_type: str, execution_mode: str, feature_request: str):
+    tasks = [ai_reply(file_path, version_control, change_type, feature_request) for file_path in file_paths]
+    if execution_mode == "parallel":
+        results = await asyncio.gather(*tasks)
+    else:
+        results = []
+        for task in tasks:
+            results.append(await task)
+    return results
+
 async def ai_rewrite(file_path: str, version_control: bool, rewrite_style: str):
     full_path = os.path.join(BASE_PATH, file_path)
     with open(full_path, 'r') as file:
@@ -105,3 +115,26 @@ async def multi_ai_append(file_paths: List[str], version_control: bool, append_l
 
 async def multi_ai_analyze_dependencies(file_paths: List[str], version_control: bool, analysis_scope: str, execution_mode: str):
     return await ai_analyze_dependencies(file_paths, version_control, analysis_scope)
+
+
+async def ai_process(file_path: str, version_control: bool, change_type: str, feature_request: str):
+    # 機能追加系
+    full_path = os.path.join(BASE_PATH, file_path)
+    with open(full_path, 'r') as file:
+        content = file.read()
+    # prompt = f"以下のファイル内容を{change_type}の方法で更新し、次の機能追加要望を実装してください：{feature_request}\n\n{content}"
+    prompt = f"\n\n{content} \n\n に対して、{feature_request}"
+    result = await generate_text_anthropic(prompt)
+    if version_control:
+        await version_control(file_path, "AI更新")
+    return {"result": result, "file_path": file_path}
+
+async def multi_ai_process(file_paths: List[str], version_control: bool, change_type: str, execution_mode: str, feature_request: str):
+    tasks = [ai_process(file_path, version_control, change_type, feature_request) for file_path in file_paths]
+    if execution_mode == "parallel":
+        results = await asyncio.gather(*tasks)
+    else:
+        results = []
+        for task in tasks:
+            results.append(await task)
+    return results
