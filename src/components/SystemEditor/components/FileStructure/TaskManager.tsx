@@ -24,6 +24,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
   const { t } = useTranslation();
   const [expandedTasks, setExpandedTasks] = useState<string[]>([]);
   const [expandedFiles, setExpandedFiles] = useState<{ [key: string]: boolean }>({});
+  const [copiedFile, setCopiedFile] = useState<string | null>(null);
 
   const toggleTask = (taskId: string) => {
     setExpandedTasks(prev =>
@@ -40,9 +41,10 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
     }));
   };
 
-  const copyFileContent = (content: string) => {
+  const copyFileContent = (taskId: string, filePath: string, content: string) => {
     navigator.clipboard.writeText(content).then(() => {
-      // コピー成功時の処理（オプション）
+      setCopiedFile(`${taskId}-${filePath}`);
+      setTimeout(() => setCopiedFile(null), 2000); // 2秒後にリセット
     }).catch(err => {
       console.error('コピーに失敗しました:', err);
     });
@@ -119,10 +121,14 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
                             <Clock className="w-4 h-4 text-yellow-500 ml-2 flex-shrink-0" />
                           )}
                           <Button
-                            onClick={() => copyFileContent(task.fileContents[file])}
-                            className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
+                            onClick={() => copyFileContent(task.id, file, task.fileContents[file])}
+                            className={`ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200 ${
+                              copiedFile === `${task.id}-${file}` ? 'bg-[#4c4c4c]' : ''
+                            }`}
                           >
-                            <Copy className="w-3 h-3 text-[#3b9cff]" />
+                            <Copy className={`w-3 h-3 ${
+                              copiedFile === `${task.id}-${file}` ? 'text-[#ffffff]' : 'text-[#3b9cff]'
+                            }`} />
                           </Button>
                         </div>
                       </div>
