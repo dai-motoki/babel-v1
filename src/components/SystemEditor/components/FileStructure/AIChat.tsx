@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
@@ -12,6 +12,7 @@ interface AIMessage {
   filePath?: string;
   status?: 'pending' | 'completed';
   isExpanded?: boolean;
+  id: string;
 }
 
 interface AIChatProps {
@@ -22,10 +23,10 @@ interface AIChatProps {
 const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<AIMessage[]>([
-    { type: 'system', content: 'ハイライトされたノードに関する質問をどうぞ。以下は質問の例です：' },
+    { type: 'system', content: 'ハイライトされたノードに関する質問をどうぞ。以下は質問の例です：', id: 'initial' },
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<string[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 20, y: 20 });
@@ -50,20 +51,26 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    const userMessage: AIMessage = { type: 'user', content: input };
+    const userMessageId = Date.now().toString();
+    const userMessage: AIMessage = { type: 'user', content: input, id: userMessageId };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
-    setIsLoading(true);
+
+    const filePaths = nodes.map((node) => node.id);
+    const aiMessageIds: string[] = [];
+
+    filePaths.forEach((filePath) => {
+      const aiMessageId = `${userMessageId}-${filePath}`;
+      aiMessageIds.push(aiMessageId);
+      setMessages((prev) => [
+        ...prev,
+        { type: 'ai', content: '', filePath, status: 'pending', isExpanded: false, id: aiMessageId },
+      ]);
+    });
+
+    setPendingRequests((prev) => [...prev, ...aiMessageIds]);
 
     try {
-      const filePaths = nodes.map((node) => node.id);
-      filePaths.forEach((filePath) => {
-        setMessages((prev) => [
-          ...prev,
-          { type: 'ai', content: '', filePath, status: 'pending', isExpanded: false },
-        ]);
-      });
-
       const response = await axios.post('http://localhost:8000/v1/ai-file-ops/multi-ai-update', {
         version_control: false,
         file_paths: filePaths,
@@ -73,22 +80,23 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
       });
 
       response.data.result.forEach((result: any) => {
+        const aiMessageId = aiMessageIds[filePaths.indexOf(result.file_path)];
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.filePath === result.file_path
+            msg.id === aiMessageId
               ? { ...msg, content: result.result.generated_text, status: 'completed' }
               : msg
           )
         );
+        setPendingRequests((prev) => prev.filter((id) => id !== aiMessageId));
       });
     } catch (error) {
       console.error('AI response error:', error);
       setMessages((prev) => [
         ...prev,
-        { type: 'system', content: t('エラーが発生しました。もう一度お試しください。') },
+        { type: 'system', content: t('エラーが発生しました。もう一度お試しください。'), id: Date.now().toString() },
       ]);
-    } finally {
-      setIsLoading(false);
+      setPendingRequests((prev) => prev.filter((id) => !aiMessageIds.includes(id)));
     }
   };
 
@@ -100,6 +108,14 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
 
   const insertSampleQuestion = (question: string) => {
     setInput(question);
+  };
+
+  const copyMessageContent = (content: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      // コピー成功時の処理（オプション）
+    }).catch(err => {
+      console.error('コピーに失敗しました:', err);
+    });
   };
 
   const renderMarkdown = (content: string) => {
@@ -152,7 +168,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
       <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[#4c4c4c] scrollbar-track-[#2d2d2d]">
         {messages.map((message, index) => (
           <div
-            key={index}
+            key={message.id}
             className={`p-3 rounded-lg text-sm ${
               message.type === 'user'
                 ? 'bg-gradient-to-r from-[#264f78] to-[#1e3a5f] text-white ml-auto max-w-[75%]'
@@ -184,6 +200,12 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                       <ChevronDown className="w-3 h-3 text-[#3b9cff]" />
                     )}
                   </Button>
+                  <Button
+                    onClick={() => copyMessageContent(message.content)}
+                    className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
+                  >
+                    <Copy className="w-3 h-3 text-[#3b9cff]" />
+                  </Button>
                 </div>
               </div>
             )}
@@ -194,7 +216,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             )}
           </div>
         ))}
-        {isLoading && (
+        {pendingRequests.length > 0 && (
           <div className="text-center">
             <span className="animate-pulse text-xs bg-[#3c3c3c] px-3 py-1 rounded-full">{t('AIが考え中...')}</span>
           </div>
@@ -218,12 +240,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('メッセージを入力...')}
           className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e639c] transition-all duration-200"
-          disabled={isLoading}
         />
         <Button
           onClick={handleSubmit}
-          disabled={isLoading}
-          className="bg-gradient-to-r from-[#0e639c] to-[#1177bb] text-white rounded-r-lg px-4 py-2 hover:from-[#1177bb] hover:to-[#0e639c] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-gradient-to-r from-[#0e639c] to-[#1177bb] text-white rounded-r-lg px-4 py-2 hover:from-[#1177bb] hover:to-[#0e639c] transition-all duration-200"
         >
           <Send className="w-4 h-4" />
         </Button>
