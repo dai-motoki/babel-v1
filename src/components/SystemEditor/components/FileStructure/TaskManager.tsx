@@ -1,7 +1,7 @@
 // TaskManager.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy, ChevronUp } from 'lucide-react';
 import Button from '../common/Button';
 
 interface Task {
@@ -99,13 +99,19 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
                   {task.relatedFiles.map((file) => (
                     <div key={file} className="mb-2">
                       <div className="flex justify-between items-center">
-                        <span
-                          className="truncate cursor-pointer hover:text-[#3b9cff]"
-                          title={file}
-                          onClick={() => toggleFile(task.id, file)}
-                        >
-                          {truncateFilePath(file, 30)}
-                        </span>
+                        <div className="flex items-center cursor-pointer" onClick={() => toggleFile(task.id, file)}>
+                          {expandedFiles[`${task.id}-${file}`] ? (
+                            <ChevronUp className="w-4 h-4 mr-2 text-[#3b9cff]" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 mr-2 text-[#3b9cff]" />
+                          )}
+                          <span
+                            className="truncate hover:text-[#3b9cff]"
+                            title={file}
+                          >
+                            {truncateFilePath(file, 30)}
+                          </span>
+                        </div>
                         <div className="flex items-center">
                           {task.fileProgress[file] === 'completed' ? (
                             <CheckCircle className="w-4 h-4 text-green-500 ml-2 flex-shrink-0" />
