@@ -320,26 +320,28 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             </button>
           ))}
         </div>
-        <form onSubmit={(e: React.FormEvent) => handleSubmit(e, false)} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
+        <form onSubmit={(e) => handleSubmit(e, false)} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
           <input
             type="text"
             value={input}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             placeholder={t('メッセージを入力...')}
-            className="flex-grow bg-[#1c1c1c] text-[#d4d4d4] rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4a4a4a] transition-all duration-200"
+            className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e639c] transition-all duration-200 mr-2"
           />
-          <Button
-            onClick={(e: React.MouseEvent) => handleSubmit(e, false)}
-            className="bg-[#2c2c2c] text-[#d4d4d4] rounded-r-lg px-4 py-2 hover:bg-[#3c3c3c] transition-all duration-200"
-          >
-            <MessageSquare className="w-4 h-4" />
-          </Button>
-          <Button
-            onClick={(e: React.MouseEvent) => handleSubmit(e, true)}
-            className="bg-[#2c2c2c] text-[#d4d4d4] rounded-lg px-4 py-2 ml-2 hover:bg-[#3c3c3c] transition-all duration-200"
-          >
-            <Wrench className="w-4 h-4" />
-          </Button>
+          <div className="flex">
+            <Button
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e, false)}
+              className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-4 py-2 hover:bg-[#4c4c4c] transition-all duration-200 mr-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </Button>
+            <Button
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e, true)}
+              className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-4 py-2 hover:bg-[#4c4c4c] transition-all duration-200"
+            >
+              <Wrench className="w-4 h-4" />
+            </Button>
+          </div>
         </form>
       </div>
       {showTaskManager && (
