@@ -11,8 +11,6 @@ import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
 import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer } from 'lucide-react';
-
-// 新しく追加: AIチャットコンポーネントのインポート
 import AIChat from './AIChat';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
@@ -33,14 +31,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [highlightedNodes, setHighlightedNodes] = useState([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectionStart, setSelectionStart] = useState(null);
-  const [selectionEnd, setSelectionEnd] = useState(null);
-  const [selectedNodesInBox, setSelectedNodesInBox] = useState([]);
-
-  // 新しく追加: AIチャットの状態
+  const [selectionPath, setSelectionPath] = useState([]);
+  const [selectedNodesInPath, setSelectedNodesInPath] = useState([]);
   const [showAIChat, setShowAIChat] = useState(false);
 
-  // ディレクトリ構造を読み込む関数
   const loadDirectoryStructure = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -70,7 +64,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [changes, loadDirectoryStructure]);
 
-  // ノードがクリックされたときの処理
   const handleClick = useCallback((node, event) => {
     if (!isSelectionMode) {
       console.log('クリックされたノード:', node);
@@ -79,7 +72,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [isSelectionMode]);
 
-  // ノードをハイライトする関数
   const highlightNode = useCallback((node) => {
     setHighlightedNodes(prevNodes => {
       if (prevNodes.some(n => n.id === node.id)) {
@@ -90,7 +82,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     });
   }, []);
 
-  // ノードの周辺を取得する関数
   const getNodeSurroundings = useCallback((node) => {
     const surroundingNodes = new Set([node]);
     const surroundingLinks = new Set();
@@ -111,7 +102,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     setFilteredLinks(Array.from(surroundingLinks));
   }, [directoryStructure]);
 
-  // エディタを表示する関数
   const showEditor = useCallback((node) => {
     setSelectedNodes(prevSelected => {
       if (!prevSelected.some(n => n.id === node.id)) {
@@ -121,7 +111,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     });
   }, []);
 
-  // 検索処理を行う関数
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
     if (!query) {
@@ -140,7 +129,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [directoryStructure]);
 
-  // 全てのノードとリンクを表示する関数
   const showAll = useCallback(() => {
     setFilteredNodes(directoryStructure.nodes);
     setFilteredLinks(directoryStructure.links);
@@ -153,55 +141,57 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
     if (isSelectionMode) {
-      // 選択モードを解除する時、選択状態をリセット
-      setSelectedNodesInBox([]);
-      setSelectionStart(null);
-      setSelectionEnd(null);
+      setSelectedNodesInPath([]);
+      setSelectionPath([]);
     }
   };
 
   const handleOverlayMouseDown = (event) => {
     if (isSelectionMode) {
       const { offsetX, offsetY } = event.nativeEvent;
-      setSelectionStart({ x: offsetX, y: offsetY });
-      setSelectionEnd(null);
-      setSelectedNodesInBox([]);
+      setSelectionPath([{ x: offsetX, y: offsetY }]);
+      setSelectedNodesInPath([]);
     }
   };
 
   const handleOverlayMouseMove = (event) => {
-    if (isSelectionMode && selectionStart) {
+    if (isSelectionMode && selectionPath.length > 0) {
       const { offsetX, offsetY } = event.nativeEvent;
-      setSelectionEnd({ x: offsetX, y: offsetY });
+      setSelectionPath(prevPath => [...prevPath, { x: offsetX, y: offsetY }]);
     }
   };
 
   const handleOverlayMouseUp = () => {
-    if (isSelectionMode && selectionStart && selectionEnd) {
+    if (isSelectionMode && selectionPath.length > 0) {
       const selectedNodes = filteredNodes.filter(node => {
         const { x, y } = fgRef.current.graph2ScreenCoords(node.x, node.y);
-        return (
-          x >= Math.min(selectionStart.x, selectionEnd.x) &&
-          x <= Math.max(selectionStart.x, selectionEnd.x) &&
-          y >= Math.min(selectionStart.y, selectionEnd.y) &&
-          y <= Math.max(selectionStart.y, selectionEnd.y)
-        );
+        return isPointInPolygon({ x, y }, selectionPath);
       });
-      setSelectedNodesInBox(selectedNodes);
-      setSelectionStart(null);
-      setSelectionEnd(null);
+      setSelectedNodesInPath(selectedNodes);
     }
+  };
+
+  const isPointInPolygon = (point, polygon) => {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].x, yi = polygon[i].y;
+      const xj = polygon[j].x, yj = polygon[j].y;
+      const intersect = ((yi > point.y) !== (yj > point.y))
+          && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
   };
 
   const handleSelectionAction = (action) => {
     switch (action) {
       case 'highlight':
-        setHighlightedNodes(prevNodes => [...prevNodes, ...selectedNodesInBox]);
+        setHighlightedNodes(prevNodes => [...prevNodes, ...selectedNodesInPath]);
         break;
       case 'surroundings':
-        const surroundingNodes = new Set(selectedNodesInBox);
+        const surroundingNodes = new Set(selectedNodesInPath);
         const surroundingLinks = new Set();
-        selectedNodesInBox.forEach(node => {
+        selectedNodesInPath.forEach(node => {
           directoryStructure.links.forEach(link => {
             if (link.source.id === node.id || link.target.id === node.id) {
               surroundingLinks.add(link);
@@ -214,15 +204,15 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         setFilteredLinks(Array.from(surroundingLinks));
         break;
       case 'showEditor':
-        selectedNodesInBox.forEach(node => showEditor(node));
+        selectedNodesInPath.forEach(node => showEditor(node));
         break;
       default:
         console.log(`Action ${action} not implemented for selection`);
     }
-    setSelectedNodesInBox([]);
+    setSelectedNodesInPath([]);
+    setSelectionPath([]);
   };
 
-  // 新しく追加: ハイライト済みノードに対してAIチャットを開始する関数
   const startAIChatWithHighlightedNodes = () => {
     setShowAIChat(true);
   };
@@ -243,7 +233,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       ctx.fillStyle = getNodeColor(node);
       ctx.fill();
 
-      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodes.some(n => n.id === node.id) || selectedNodesInBox.some(n => n.id === node.id)) {
+      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodes.some(n => n.id === node.id) || selectedNodesInPath.some(n => n.id === node.id)) {
         const baseGlowRadius = node.type === 'directory' ? 8 : 6;
         const time = performance.now() / 1000;
         const glowRadius = baseGlowRadius + Math.sin(time * 1.5) * 2;
@@ -262,7 +252,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
             gradient.addColorStop(0, `rgba(0, 255, 255, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
             gradient.addColorStop(0.5, `rgba(0, 255, 255, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
-          } else if (selectedNodesInBox.some(n => n.id === node.id)) {
+          } else if (selectedNodesInPath.some(n => n.id === node.id)) {
             gradient.addColorStop(0, `rgba(255, 0, 0, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
             gradient.addColorStop(0.5, `rgba(255, 0, 0, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
@@ -283,9 +273,9 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         ctx.strokeStyle = highlightedNodes.some(n => n.id === node.id) ? 'rgba(255, 255, 255, 1)' : 
                           node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : 
                           node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 
-                          selectedNodesInBox.some(n => n.id === node.id) ? 'rgba(255, 0, 0, 0.8)' :
+                          selectedNodesInPath.some(n => n.id === node.id) ? 'rgba(255, 0, 0, 0.8)' :
                           'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = highlightedNodes.some(n => n.id === node.id) || selectedNodesInBox.some(n => n.id === node.id) ? 3 : 2;
+        ctx.lineWidth = highlightedNodes.some(n => n.id === node.id) || selectedNodesInPath.some(n => n.id === node.id) ? 3 : 2;
         ctx.stroke();
       }
 
@@ -310,7 +300,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     cooldownTime: 15000,
     width: 2000,
     height: 1000,
-  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodes, selectedNodesInBox]);
+    enableNodeDrag: !isSelectionMode,
+    enablePanInteraction: !isSelectionMode,
+    enableZoomInteraction: !isSelectionMode,
+  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodes, selectedNodesInPath, isSelectionMode]);
 
   if (!selectedSystem) {
     return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('システムディレクトリを選択してください')}</div>;
@@ -335,11 +328,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
           <h4 className="text-[#d4d4d4] font-medium mb-2">{t('ハイライト済みノード')}</h4>
           <ul className="text-[#d4d4d4] text-sm max-h-40 overflow-y-auto">
-            {highlightedNodes.map((node: any) => (
+            {highlightedNodes.map((node) => (
               <li key={node.id}>{node.id || node.name}</li>
             ))}
           </ul>
-          {/* 新しく追加: AIチャット開始ボタン */}
           {highlightedNodes.length > 0 && (
             <Button onClick={startAIChatWithHighlightedNodes} className="mt-2 text-xs flex items-center">
               <MessageCircle className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
@@ -377,30 +369,36 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               ref={fgRef}
               {...forceGraphConfig}
             />
+
+
+
             {isSelectionMode && (
-              <div
-                ref={overlayRef}
-                className="absolute inset-0 bg-black bg-opacity-30 cursor-crosshair"
-                onMouseDown={handleOverlayMouseDown}
-                onMouseMove={handleOverlayMouseMove}
-                onMouseUp={handleOverlayMouseUp}
-              >
-                {selectionStart && selectionEnd && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: Math.min(selectionStart.x, selectionEnd.x),
-                      top: Math.min(selectionStart.y, selectionEnd.y),
-                      width: Math.abs(selectionEnd.x - selectionStart.x),
-                      height: Math.abs(selectionEnd.y - selectionStart.y),
-                      border: '2px solid #4a90e2',
-                      backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                      pointerEvents: 'none',
-                    }}
-                  />
+              <>
+                <div
+                  ref={overlayRef}
+                  className="absolute inset-0 bg-black bg-opacity-30 cursor-crosshair"
+                  onMouseDown={handleOverlayMouseDown}
+                  onMouseMove={handleOverlayMouseMove}
+                  onMouseUp={handleOverlayMouseUp}
+                />
+                {selectionPath.length > 0 && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    <svg width="100%" height="100%">
+                      <path
+                        d={`M ${selectionPath.map(p => `${p.x},${p.y}`).join(' L ')}`}
+                        fill="none"
+                        stroke="#4a90e2"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  </div>
                 )}
-              </div>
+              </>
             )}
+
+
+
+
             {clickedNode && !isSelectionMode && (
               <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ left: menuPosition.x, top: menuPosition.y, transform: 'translate(-50%, -100%)' }}>
                 <Button onClick={() => { highlightNode(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
@@ -429,7 +427,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                 </Button>
               </div>
             )}
-            {selectedNodesInBox.length > 0 && (
+            {selectedNodesInPath.length > 0 && (
               <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ right: 10, top: 10 }}>
                 <Button onClick={() => handleSelectionAction('highlight')} className="text-xs flex items-center">
                   <Highlighter className="w-3 h-3 mr-2 text-yellow-200 opacity-50" />
@@ -460,7 +458,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           </div>
         </div>
       </div>
-      {/* 新しく追加: AIチャットコンポーネント */}
       {showAIChat && (
         <AIChat
           nodes={highlightedNodes}
@@ -472,3 +469,18 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 });
 
 export default FileStructure;
+// ```
+
+// 主な変更点は以下の通りです：
+
+// 1. `forceGraphConfig` に `enableNodeDrag`, `enablePanInteraction`, `enableZoomInteraction` を追加し、これらを `!isSelectionMode` に設定しました。これにより、選択モードがオンの時にグラフの操作を無効化します。
+
+// 2. 四角形の選択を投げ縄的な選択に変更しました。`selectionStart` と `selectionEnd` の代わりに `selectionPath` を使用し、マウスの動きに応じて選択パスを更新します。
+
+// 3. `handleOverlayMouseMove` を修正し、マウスの動きに応じて `selectionPath` を更新するようにしました。
+
+// 4. 選択領域の描画を SVG パスを使用して行うように変更しました。これにより、自由な形状の選択が可能になります。
+
+// 5. `isPointInPolygon` 関数を追加し、ノードが選択領域内にあるかどうかを判定するようにしました。
+
+// これらの変更により、選択モードがオンの時にグラフが動かなくなり、また投げ縄的な自由形状での選択が可能になります。
