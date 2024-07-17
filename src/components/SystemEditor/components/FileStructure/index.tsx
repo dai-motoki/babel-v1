@@ -405,9 +405,9 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                         filter="url(#glow)"
                       />
                       <linearGradient id="goldenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#ffd700" stopOpacity="0.3"/>
-                        <stop offset="50%" stopColor="#fff8dc" stopOpacity="0.5"/>
-                        <stop offset="100%" stopColor="#ffd700" stopOpacity="0.3"/>
+                        <stop offset="0%" stopColor="#FFE4B5" stopOpacity="0.3"/>
+                        <stop offset="50%" stopColor="#FFDAB9" stopOpacity="0.5"/>
+                        <stop offset="100%" stopColor="#FFE4B5" stopOpacity="0.3"/>
                       </linearGradient>
                     </svg>
                   </div>
