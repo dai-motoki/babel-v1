@@ -6,9 +6,6 @@ import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 
-// Loader2とCheckCircleコンポーネントをインポートします。
-// これらは、処理中の状態と完了状態を視覚的に表現するために使用されます。
-
 interface AIMessage {
   type: 'system' | 'user' | 'ai';
   content: string;
@@ -105,6 +102,28 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     setInput(question);
   };
 
+  const renderMarkdown = (content: string) => {
+    return (
+      <ReactMarkdown
+        components={{
+          table: ({ node, ...props }) => (
+            <table className="border-collapse border border-[#4c4c4c] my-2" {...props} />
+          ),
+          thead: ({ node, ...props }) => <thead className="bg-[#3c3c3c]" {...props} />,
+          th: ({ node, ...props }) => (
+            <th className="border border-[#4c4c4c] px-2 py-1" {...props} />
+          ),
+          td: ({ node, ...props }) => (
+            <td className="border border-[#4c4c4c] px-2 py-1" {...props} />
+          ),
+        }}
+        className="prose prose-invert max-w-none"
+      >
+        {content}
+      </ReactMarkdown>
+    );
+  };
+
   return (
     <div
       ref={chatBoxRef}
@@ -170,11 +189,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             )}
             {(message.type !== 'ai' || message.isExpanded) && (
               <div className={`mt-2 ${message.isExpanded ? 'animate-fadeIn' : ''}`}>
-                {message.type === 'ai' ? (
-                  <ReactMarkdown className="prose prose-invert max-w-none">{message.content}</ReactMarkdown>
-                ) : (
-                  message.content
-                )}
+                {message.type === 'ai' ? renderMarkdown(message.content) : message.content}
               </div>
             )}
           </div>
