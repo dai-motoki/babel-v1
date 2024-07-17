@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, List } from 'lucide-react';
+import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import TaskManager from './TaskManager';
 
 interface AIMessage {
   type: 'system' | 'user' | 'ai';
@@ -16,23 +16,19 @@ interface AIMessage {
   id: string;
 }
 
-interface FileTask {
-  filePath: string;
-  status: 'pending' | 'completed';
+interface AIChatProps {
+  nodes: any[];
+  onClose: () => void;
 }
 
 interface Task {
   id: string;
-  name: string;
   startTime: Date;
   endTime?: Date;
-  fileTasks: FileTask[];
+  relatedFiles: string[];
+  name: string;
   status: 'pending' | 'completed';
-}
-
-interface AIChatProps {
-  nodes: any[];
-  onClose: () => void;
+  fileProgress: { [key: string]: 'pending' | 'completed' };
 }
 
 const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
@@ -45,8 +41,8 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 20, y: 20 });
-  const [tasks, setTasks] = useLocalStorage<Task[]>('ai-chat-tasks', []);
-  const [showTaskList, setShowTaskList] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showTaskManager, setShowTaskManager] = useState(false);
 
   const { onMouseDown } = useDraggable(chatBoxRef, setPosition, 5);
 
@@ -76,6 +72,17 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     const filePaths = nodes.map((node) => node.id);
     const aiMessageIds: string[] = [];
 
+    // タスクの作成
+    const newTask: Task = {
+      id: userMessageId,
+      startTime: new Date(),
+      relatedFiles: filePaths,
+      name: input,
+      status: 'pending',
+      fileProgress: filePaths.reduce((acc, file) => ({ ...acc, [file]: 'pending' }), {}),
+    };
+    setTasks((prev) => [...prev, newTask]);
+
     filePaths.forEach((filePath) => {
       const aiMessageId = `${userMessageId}-${filePath}`;
       aiMessageIds.push(aiMessageId);
@@ -86,15 +93,6 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     });
 
     setPendingRequests((prev) => [...prev, ...aiMessageIds]);
-
-    const newTask: Task = {
-      id: userMessageId,
-      name: input,
-      startTime: new Date(),
-      fileTasks: filePaths.map(filePath => ({ filePath, status: 'pending' })),
-      status: 'pending',
-    };
-    setTasks((prev) => [...prev, newTask]);
 
     try {
       const response = await axios.post('http://localhost:8000/v1/ai-file-ops/multi-ai-update', {
@@ -115,34 +113,31 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
           )
         );
         setPendingRequests((prev) => prev.filter((id) => id !== aiMessageId));
-        
-        // タスクの進捗状況を更新
+
+        // タスクの更新
         setTasks((prev) =>
           prev.map((task) =>
             task.id === userMessageId
               ? {
                   ...task,
-                  fileTasks: task.fileTasks.map((fileTask) =>
-                    fileTask.filePath === result.file_path
-                      ? { ...fileTask, status: 'completed' }
-                      : fileTask
-                  ),
+                  fileProgress: {
+                    ...task.fileProgress,
+                    [result.file_path]: 'completed',
+                  },
                 }
               : task
           )
         );
       });
 
-      // すべてのファイルタスクが完了したらタスク全体を完了とする
+      // タスクの完了
       setTasks((prev) =>
         prev.map((task) =>
           task.id === userMessageId
             ? {
                 ...task,
+                status: 'completed',
                 endTime: new Date(),
-                status: task.fileTasks.every((fileTask) => fileTask.status === 'completed')
-                  ? 'completed'
-                  : 'pending',
               }
             : task
         )
@@ -154,13 +149,6 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         { type: 'system', content: t('エラーが発生しました。もう一度お試しください。'), id: Date.now().toString() },
       ]);
       setPendingRequests((prev) => prev.filter((id) => !aiMessageIds.includes(id)));
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === userMessageId
-            ? { ...task, endTime: new Date(), status: 'completed' }
-            : task
-        )
-      );
     }
   };
 
@@ -204,45 +192,6 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     );
   };
 
-  const toggleTaskList = () => {
-    setShowTaskList(!showTaskList);
-  };
-
-  const renderTaskList = () => {
-    return (
-      <div className="fixed top-0 right-0 w-80 h-full bg-[#1e1e1e] text-[#d4d4d4] p-4 overflow-y-auto">
-        <h2 className="text-lg font-bold mb-4">タスク一覧</h2>
-        {tasks.map((task, index) => (
-          <div key={task.id} className="mb-4 p-2 bg-[#2d2d2d] rounded">
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold">タスク {index + 1}: {task.name}</p>
-              {task.status === 'completed' ? (
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              ) : (
-                <Loader2 className="w-4 h-4 animate-spin text-[#3b9cff]" />
-              )}
-            </div>
-            <p className="text-xs">開始: {task.startTime.toLocaleString()}</p>
-            {task.endTime && <p className="text-xs">終了: {task.endTime.toLocaleString()}</p>}
-            <p className="text-xs mt-2">ファイル進捗:</p>
-            <ul className="list-disc pl-4 mt-1">
-              {task.fileTasks && task.fileTasks.map((fileTask, i) => (
-                <li key={i} className="text-xs flex items-center justify-between">
-                  <span className="truncate mr-2">{fileTask.filePath}</span>
-                  {fileTask.status === 'completed' ? (
-                    <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
-                  ) : (
-                    <Loader2 className="w-3 h-3 animate-spin text-[#3b9cff] flex-shrink-0" />
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <>
       <div
@@ -266,8 +215,13 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             {t('AIチャット')}
           </h3>
           <div className="flex items-center">
-            <Button onClick={toggleTaskList} className="mr-2 text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200">
-              <List className="w-4 h-4" />
+            {/* タスク管理ボタンを追加 */}
+            <Button
+              onClick={() => setShowTaskManager(!showTaskManager)}
+              className="mr-2 text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200"
+            >
+              {/* ListTodoアイコンの代わりにテキストを使用 */}
+              <span className="text-xs">タスク</span>
             </Button>
             <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200">
               <X className="w-4 h-4" />
@@ -358,7 +312,17 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
           </Button>
         </form>
       </div>
-      {showTaskList && renderTaskList()}
+      {showTaskManager && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${position.x + 400}px`,
+            top: `${position.y}px`,
+          }}
+        >
+          <TaskManager tasks={tasks} onClose={() => setShowTaskManager(false)} />
+        </div>
+      )}
     </>
   );
 };
