@@ -123,13 +123,46 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
     full_path = os.path.join(BASE_PATH, file_path)
     with open(full_path, 'r') as file:
         content = file.read()
-    prompt = f"""\n\n{content} \n\n に対して、{feature_request}
+    python_process_prompt = f"""
+    上記を実現するpythonファイルを作成します。
+
+    - python subprocess モジュール使用
+    - {full_path}への直接書き込み
+        
     """
+    prompt = f"""\n\n{content} \n\n に対して、{feature_request}
+    """ + python_process_prompt
+
+
     # プログラムは全文出力し、コードブロックで囲うこと。省略は一切しない。"""
     result = await generate_text_anthropic(prompt)
     text = result['generated_text']
+    # コードを処理し、サブプロセスで実行する
     code = process(text)
-    result =  {"generated_text": code}
+    
+    # 現在の日付を取得
+    import datetime
+    current_date = datetime.datetime.now().strftime("%Y%m%d")
+    
+    # 一時ファイル名を生成
+    temp_file_name = f"../.history/{current_date}.py"
+    
+    # 一時ファイルにコードを書き込む
+    import os
+    os.makedirs(os.path.dirname(temp_file_name), exist_ok=True)
+    with open(temp_file_name, 'w') as temp_file:
+        temp_file.write(code)
+    
+    # サブプロセスでコードを実行
+    import subprocess
+    try:
+        output = subprocess.check_output(['python', temp_file_name], stderr=subprocess.STDOUT, universal_newlines=True)
+        result = {"generated_text": code, "execution_output": output}
+    except subprocess.CalledProcessError as e:
+        result = {"generated_text": code, "execution_error": e.output}
+    
+    # # 一時ファイルを削除
+    # os.remove(temp_file_name)
     if version_control:
         await version_control(file_path, "AI更新")
     return {"result": result, "file_path": file_path}
