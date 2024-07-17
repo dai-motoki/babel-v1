@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Tool } from 'lucide-react';
+import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Wrench } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import TaskManager from './TaskManager';
 
+// AIMessageインターフェースの定義
 interface AIMessage {
   type: 'system' | 'user' | 'ai';
   content: string;
@@ -16,11 +17,13 @@ interface AIMessage {
   id: string;
 }
 
+// AIChatPropsインターフェースの定義
 interface AIChatProps {
   nodes: any[];
   onClose: () => void;
 }
 
+// Taskインターフェースの定義
 interface Task {
   id: string;
   startTime: Date;
@@ -32,6 +35,7 @@ interface Task {
   fileContents: { [key: string]: string };
 }
 
+// AIChat コンポーネントの定義
 const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const { t } = useTranslation();
   const [messages, setMessages] = useState<AIMessage[]>([
@@ -47,6 +51,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
 
   const { onMouseDown } = useDraggable(chatBoxRef, setPosition, 5);
 
+  // サンプル質問の配列
   const sampleQuestions = [
     '主な目的は？',
     '依存関係は？',
@@ -58,12 +63,14 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     'リファクタリング',
   ];
 
+  // チャットコンテナのスクロール処理
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
+  // メッセージ送信処理
   const handleSubmit = async (e: React.FormEvent, isProcessing: boolean = false) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -76,7 +83,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     const filePaths = nodes.map((node) => node.id);
     const aiMessageIds: string[] = [];
 
-    // タスクの作成
+    // 新しいタスクの作成
     const newTask: Task = {
       id: userMessageId,
       startTime: new Date(),
@@ -88,6 +95,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     };
     setTasks((prev) => [...prev, newTask]);
 
+    // AIメッセージの作成
     filePaths.forEach((filePath) => {
       const aiMessageId = `${userMessageId}-${filePath}`;
       aiMessageIds.push(aiMessageId);
@@ -100,6 +108,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     setPendingRequests((prev) => [...prev, ...aiMessageIds]);
 
     try {
+      // APIエンドポイントの選択
       const endpoint = isProcessing ? '/v1/ai-file-ops/multi-ai-process' : '/v1/ai-file-ops/multi-ai-reply';
       const response = await axios.post(`http://localhost:8000${endpoint}`, {
         version_control: false,
@@ -109,6 +118,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         feature_request: input,
       });
 
+      // レスポンス処理
       response.data.result.forEach((result: any) => {
         const aiMessageId = aiMessageIds[filePaths.indexOf(result.file_path)];
         setMessages((prev) =>
@@ -162,16 +172,19 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     }
   };
 
+  // メッセージの展開/折りたたみ処理
   const toggleExpand = (index: number) => {
     setMessages((prev) =>
       prev.map((msg, i) => (i === index ? { ...msg, isExpanded: !msg.isExpanded } : msg))
     );
   };
 
+  // サンプル質問の挿入
   const insertSampleQuestion = (question: string) => {
     setInput(question);
   };
 
+  // メッセージ内容のコピー
   const copyMessageContent = (content: string) => {
     navigator.clipboard.writeText(content).then(() => {
       // コピー成功時の処理（オプション）
@@ -180,6 +193,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     });
   };
 
+  // Markdownのレンダリング
   const renderMarkdown = (content: string) => {
     return (
       <ReactMarkdown
@@ -225,12 +239,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             {t('AIチャット')}
           </h3>
           <div className="flex items-center">
-            {/* タスク管理ボタンを追加 */}
             <Button
               onClick={() => setShowTaskManager(!showTaskManager)}
               className="mr-2 text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200"
             >
-              {/* ListTodoアイコンの代わりにテキストを使用 */}
               <span className="text-xs">タスク</span>
             </Button>
             <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200">
@@ -308,7 +320,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             </button>
           ))}
         </div>
-        <form onSubmit={handleSubmit} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
+        <form onSubmit={(e) => handleSubmit(e, false)} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
           <input
             type="text"
             value={input}
@@ -317,10 +329,16 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e639c] transition-all duration-200"
           />
           <Button
-            onClick={handleSubmit}
+            onClick={(e) => handleSubmit(e, false)}
             className="bg-gradient-to-r from-[#0e639c] to-[#1177bb] text-white rounded-r-lg px-4 py-2 hover:from-[#1177bb] hover:to-[#0e639c] transition-all duration-200"
           >
-            <Send className="w-4 h-4" />
+            <MessageSquare className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={(e) => handleSubmit(e, true)}
+            className="bg-gradient-to-r from-[#6c0e9c] to-[#8811bb] text-white rounded-lg px-4 py-2 ml-2 hover:from-[#8811bb] hover:to-[#6c0e9c] transition-all duration-200"
+          >
+            <Wrench className="w-4 h-4" />
           </Button>
         </form>
       </div>
