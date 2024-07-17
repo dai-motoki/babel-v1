@@ -1,7 +1,7 @@
 // TaskManager.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, ChevronDown, ChevronRight, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Clock, CheckCircle} from 'lucide-react';
 import Button from '../common/Button';
 
 interface Task {
@@ -85,7 +85,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
                       {task.fileProgress[file] === 'completed' ? (
                         <CheckCircle className="w-4 h-4 text-green-500 ml-2 flex-shrink-0" />
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-yellow-500 ml-2 flex-shrink-0" />
+                        <Clock className="w-4 h-4 text-yellow-500 ml-2 flex-shrink-0" />
                       )}
                     </div>
                   ))}

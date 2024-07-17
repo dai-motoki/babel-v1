@@ -273,8 +273,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                 </div>
               )}
               {(message.type !== 'ai' || message.isExpanded) && (
-                <div className={`mt-2 ${message.isExpanded ? 'animate-fadeIn' : ''}`}>
-                  {message.type === 'ai' ? renderMarkdown(message.content) : message.content}
+                <div className={`mt-2 ${message.isExpanded ? 'animate-fadeIn' : ''} overflow-hidden`}>
+                  <div className="break-words">
+                    {message.type === 'ai' ? renderMarkdown(message.content) : message.content}
+                  </div>
                 </div>
               )}
             </div>
