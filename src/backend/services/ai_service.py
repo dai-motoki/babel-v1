@@ -5,6 +5,7 @@ import asyncio
 from services.anthropic_service import generate_text_anthropic
 from utils.version_control import version_control
 from utils.process import process
+import subprocess
 
 # ベースファイルパスを設定
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -132,13 +133,24 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
     """
     prompt = f"""\n\n{content} \n\n に対して、{feature_request}
     """ + python_process_prompt
-
-
     # プログラムは全文出力し、コードブロックで囲うこと。省略は一切しない。"""
+
+
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    logger.info(f"Anthropicからテキストを生成します。プロンプト: {prompt[:100]}...")
     result = await generate_text_anthropic(prompt)
     text = result['generated_text']
-    # コードを処理し、サブプロセスで実行する
+    logger.info("Anthropicからのテキスト生成が完了しました。")
+
+    logger.info("生成されたテキストを処理します。")
     code = process(text)
+
+
+
+    logger.info("テキスト処理が完了しました。")
     
     # 現在の日付を取得
     import datetime
@@ -146,25 +158,34 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
     
     # 一時ファイル名を生成
     temp_file_name = f"../.history/{current_date}.py"
+    logger.info(f"一時ファイル名を生成しました: {temp_file_name}")
     
     # 一時ファイルにコードを書き込む
-    import os
     os.makedirs(os.path.dirname(temp_file_name), exist_ok=True)
     with open(temp_file_name, 'w') as temp_file:
         temp_file.write(code)
+    # logger.info(f"コードを一時ファイルに書き込みました: {temp_file_name}")
     
-    # サブプロセスでコードを実行
-    import subprocess
+    # # サブプロセスでコードを実行
     try:
+        logger.info("サブプロセスでコードを実行します。")
         output = subprocess.check_output(['python', temp_file_name], stderr=subprocess.STDOUT, universal_newlines=True)
+        # result = {"generated_text": code}
         result = {"generated_text": code, "execution_output": output}
+        logger.info("コードの実行が成功しました。")
     except subprocess.CalledProcessError as e:
+        logger.error(f"コードの実行中にエラーが発生しました: {e}")
+        # result = {"generated_text": code}
         result = {"generated_text": code, "execution_error": e.output}
+    result = {"generated_text": code}
     
     # # 一時ファイルを削除
     # os.remove(temp_file_name)
     if version_control:
+        logger.info(f"バージョン管理を実行します: {file_path}")
         await version_control(file_path, "AI更新")
+
+    logger.info(f"処理が完了しました: {file_path}")
     return {"result": result, "file_path": file_path}
 
 async def multi_ai_process(file_paths: List[str], version_control: bool, change_type: str, execution_mode: str, feature_request: str):
