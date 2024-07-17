@@ -4,6 +4,7 @@ from typing import List
 import asyncio
 from services.anthropic_service import generate_text_anthropic
 from utils.version_control import version_control
+from utils.process import process
 
 # ベースファイルパスを設定
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -122,9 +123,13 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
     full_path = os.path.join(BASE_PATH, file_path)
     with open(full_path, 'r') as file:
         content = file.read()
-    # prompt = f"以下のファイル内容を{change_type}の方法で更新し、次の機能追加要望を実装してください：{feature_request}\n\n{content}"
-    prompt = f"\n\n{content} \n\n に対して、{feature_request}"
+    prompt = f"""\n\n{content} \n\n に対して、{feature_request}
+    """
+    # プログラムは全文出力し、コードブロックで囲うこと。省略は一切しない。"""
     result = await generate_text_anthropic(prompt)
+    text = result['generated_text']
+    code = process(text)
+    result =  {"generated_text": code}
     if version_control:
         await version_control(file_path, "AI更新")
     return {"result": result, "file_path": file_path}
