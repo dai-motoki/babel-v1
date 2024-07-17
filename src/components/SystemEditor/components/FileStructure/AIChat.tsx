@@ -29,6 +29,7 @@ interface Task {
   name: string;
   status: 'pending' | 'completed';
   fileProgress: { [key: string]: 'pending' | 'completed' };
+  fileContents: { [key: string]: string };
 }
 
 const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
@@ -80,6 +81,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
       name: input,
       status: 'pending',
       fileProgress: filePaths.reduce((acc, file) => ({ ...acc, [file]: 'pending' }), {}),
+      fileContents: {},
     };
     setTasks((prev) => [...prev, newTask]);
 
@@ -123,6 +125,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                   fileProgress: {
                     ...task.fileProgress,
                     [result.file_path]: 'completed',
+                  },
+                  fileContents: {
+                    ...task.fileContents,
+                    [result.file_path]: result.result.generated_text,
                   },
                 }
               : task

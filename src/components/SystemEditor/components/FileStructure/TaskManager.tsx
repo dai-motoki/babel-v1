@@ -1,7 +1,7 @@
 // TaskManager.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, ChevronDown, ChevronRight, Clock, CheckCircle} from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy } from 'lucide-react';
 import Button from '../common/Button';
 
 interface Task {
@@ -12,6 +12,7 @@ interface Task {
   name: string;
   status: 'pending' | 'completed';
   fileProgress: { [key: string]: 'pending' | 'completed' };
+  fileContents: { [key: string]: string };
 }
 
 interface TaskManagerProps {
@@ -22,6 +23,7 @@ interface TaskManagerProps {
 const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
   const { t } = useTranslation();
   const [expandedTasks, setExpandedTasks] = useState<string[]>([]);
+  const [expandedFiles, setExpandedFiles] = useState<{ [key: string]: boolean }>({});
 
   const toggleTask = (taskId: string) => {
     setExpandedTasks(prev =>
@@ -29,6 +31,21 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
         ? prev.filter(id => id !== taskId)
         : [...prev, taskId]
     );
+  };
+
+  const toggleFile = (taskId: string, filePath: string) => {
+    setExpandedFiles(prev => ({
+      ...prev,
+      [`${taskId}-${filePath}`]: !prev[`${taskId}-${filePath}`]
+    }));
+  };
+
+  const copyFileContent = (content: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      // コピー成功時の処理（オプション）
+    }).catch(err => {
+      console.error('コピーに失敗しました:', err);
+    });
   };
 
   // ファイルパスを省略する関数
@@ -80,12 +97,35 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
                 <div className="mt-2">
                   <div className="font-bold mb-1">{t('関連ファイル')}:</div>
                   {task.relatedFiles.map((file) => (
-                    <div key={file} className="flex justify-between items-center">
-                      <span className="truncate" title={file}>{truncateFilePath(file, 30)}</span>
-                      {task.fileProgress[file] === 'completed' ? (
-                        <CheckCircle className="w-4 h-4 text-green-500 ml-2 flex-shrink-0" />
-                      ) : (
-                        <Clock className="w-4 h-4 text-yellow-500 ml-2 flex-shrink-0" />
+                    <div key={file} className="mb-2">
+                      <div className="flex justify-between items-center">
+                        <span
+                          className="truncate cursor-pointer hover:text-[#3b9cff]"
+                          title={file}
+                          onClick={() => toggleFile(task.id, file)}
+                        >
+                          {truncateFilePath(file, 30)}
+                        </span>
+                        <div className="flex items-center">
+                          {task.fileProgress[file] === 'completed' ? (
+                            <CheckCircle className="w-4 h-4 text-green-500 ml-2 flex-shrink-0" />
+                          ) : (
+                            <Clock className="w-4 h-4 text-yellow-500 ml-2 flex-shrink-0" />
+                          )}
+                          <Button
+                            onClick={() => copyFileContent(task.fileContents[file])}
+                            className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
+                          >
+                            <Copy className="w-3 h-3 text-[#3b9cff]" />
+                          </Button>
+                        </div>
+                      </div>
+                      {expandedFiles[`${task.id}-${file}`] && (
+                        <div className="mt-2 bg-[#2d2d2d] p-2 rounded-md overflow-x-auto">
+                          <pre className="text-xs whitespace-pre-wrap">
+                            {task.fileContents[file]}
+                          </pre>
+                        </div>
                       )}
                     </div>
                   ))}
