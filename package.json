@@ -14,11 +14,14 @@
     "autoprefixer": "^10.4.19",
     "axios": "^1.7.2",
     "lucide-react": "^0.407.0",
+    "monaco-editor": "^0.50.0",
+    "monaco-vim": "^0.4.1",
     "next": "14.2.5",
     "next-i18next": "^15.3.0",
     "react": "^18",
     "react-dom": "^18",
-    "react-force-graph": "^1.44.4"
+    "react-force-graph": "^1.44.4",
+    "react-markdown": "^9.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",

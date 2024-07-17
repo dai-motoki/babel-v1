@@ -6,7 +6,7 @@ import Tower from './components/Icons/Tower';
 import SaaSCard from './components/SaaSCard';
 import SearchBar from './components/SearchBar';
 import useSaaSData from './hooks/useSaaSData';
-import VersionControl from '../ProjectDashboard/VersionControl';
+import VersionControl from '../SystemEditor/VersionControl';
 import { useRouter } from 'next/navigation';
 
 

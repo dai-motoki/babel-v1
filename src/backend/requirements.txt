@@ -1,0 +1,8 @@
+# プロジェクトの依存関係
+fastapi
+uvicorn
+gitpython
+watchdog
+alembic
+pytest
+

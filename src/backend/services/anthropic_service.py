@@ -12,11 +12,13 @@ async def generate_text_anthropic(prompt: str):
         message = await asyncio.to_thread(
             anthropic_client.messages.create,
             model="claude-3-5-sonnet-20240620",
-            max_tokens=4000,
+            max_tokens=8192,
             temperature=1,
             messages=[
                 {"role": "user", "content": prompt}
-            ]
+            ],
+            extra_headers={"anthropic-beta":
+"max-tokens-3-5-sonnet-2024-07-15"}
         )
         logger.info("Anthropicでテキスト生成成功")
         logger.info(message.content[0].text)

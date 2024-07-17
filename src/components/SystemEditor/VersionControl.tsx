@@ -5,7 +5,8 @@ import { Gitgraph, Orientation } from "@gitgraph/react";
 import { useVersionControlData } from '../../hooks/useVersionControlData';
 import { withoutAuthor } from '../../utils/gitGraphTemplate';
 import { getDummyData } from '../../constants/dummyData';
-import { FileStructure } from './ForceGraphComponents';
+// import { FileStructure } from '.';
+import { FileStructure } from './components/FileStructure';
 import { useSearchParams } from 'next/navigation';
 
 
@@ -195,7 +196,7 @@ export function VersionControl() {
   useEffect(() => {
     const fetchGeneratedDirs = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/generated-dirs');
+        const response = await fetch('http://localhost:8000/api/files/generated-dirs');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -280,7 +281,7 @@ export function VersionControl() {
       
       {selectedSystem  ? (
         <>
-          <div className="relative h-screen w-full mb-6">
+          <div className="relative h-[85vh] w-full mb-6">
             <FileStructure 
               ファイル構造データ={ファイル構造データ} 
               onNodeClick={ノード選択処理} 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import MenuBar from './components/MenuBar';
 import GlobalChat from './components/GlobalChat';
 import MultilingualWiki from './components/MultilingualWiki';
-import ProjectDashboard from './components/ProjectDashboard';
+import SystemEditor from './components/SystemEditor';
 
 const App = () => {
   const [currentComponent, setCurrentComponent] = useState('GlobalChat');
@@ -12,7 +12,7 @@ const App = () => {
   const components = {
     GlobalChat: GlobalChat,
     MultilingualWiki: MultilingualWiki,
-    ProjectDashboard: ProjectDashboard,
+    SystemEditor: SystemEditor,
   };
 
   const DynamicComponent = components[currentComponent];

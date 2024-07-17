@@ -30,16 +30,17 @@ npm run dev
 
 バックエンドは FastAPI と webソケットを利用しています。
 
-1. `backend` ディレクトリに移動します：
+1. `src/backend` ディレクトリに移動します：
 
 ```bash
-cd backend
+cd src/backend
 ```
 
 2. バックエンドサーバーを起動します：
 
 ```bash
-uvicorn app:app --reload
+uvicorn main:app --reload
+uvicorn file_watcher:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 3. webソケットを起動します：

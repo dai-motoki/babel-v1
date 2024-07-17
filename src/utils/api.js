@@ -104,13 +104,82 @@ export const sendChatMessage = (projectId, message) => post(`/projects/${project
 // ディレクトリ構造を取得
 export const fetchDirectoryStructure = async (pathType) => {
   try {
-    const response = await fetch(`http://localhost:8000/directory_structure?path_type=${pathType}`);
+    const response = await fetch(`http://localhost:8000/api/files/directory_structure?path_type=${pathType}`);
     if (!response.ok) {
       throw new Error('ディレクトリ構造の取得に失敗しました');
     }
     return await response.json();
   } catch (error) {
     console.error('ディレクトリ構造の取得中にエラーが発生しました:', error);
+    throw error;
+  }
+};
+
+// ファイルの内容を取得
+export const fetchFileContent = async (filePath) => {
+  try {
+    const response = await fetch(`http://localhost:8000/api/files/content/${encodeURIComponent(filePath)}`, {
+      headers: {
+        'accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('ファイルの内容を取得できませんでした');
+    }
+
+    const data = await response.json();
+    console.log(data);
+    return data.content;
+  } catch (error) {
+    console.error('ファイルの内容の取得中にエラーが発生しました:', error);
+    throw error;
+  }
+};
+
+// WebSocketを使用してファイル変更を監視する関数
+export const watchFileChanges = (callback) => {
+  // WebSocketの接続を確立
+  const ws = new WebSocket('ws://localhost:8001/ws');
+  
+  // メッセージを受信したときの処理
+  ws.onmessage = (event) => {
+    // 受信したデータをJSONとしてパース
+    const data = JSON.parse(event.data);
+    // コールバック関数を呼び出し、変更内容を渡す
+    callback(data.changes);
+  };
+
+  // エラーが発生したときの処理
+  ws.onerror = (error) => {
+    console.error('WebSocket接続エラー:', error);
+  };
+
+  // クリーンアップ関数を返す
+  return () => {
+    // WebSocket接続を閉じる
+    ws.close();
+  };
+};
+
+// ファイルの内容を保存する関数
+export const saveFileContent = async (filePath, content) => {
+  try {
+    // const response = await fetch('http://localhost:8000/api/files/save_file', {
+    const response = await fetch('http://localhost:8001/api/save-file', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ file_path: filePath, content }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'ファイルの保存中にエラーが発生しました');
+    }
+  } catch (error) {
+    console.error('ファイルの保存中にエラーが発生しました:', error);
     throw error;
   }
 };
@@ -127,4 +196,7 @@ export default {
   uploadFile,
   sendChatMessage,
   fetchDirectoryStructure,
+  fetchFileContent,
+  watchFileChanges,
+  saveFileContent
 };
