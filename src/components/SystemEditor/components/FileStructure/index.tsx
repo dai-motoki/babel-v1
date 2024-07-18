@@ -117,6 +117,13 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     });
   }, []);
 
+  const removeHighlightGroup = useCallback((groupId) => {
+    setHighlightedNodeGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+    if (selectedGroupId === groupId) {
+      setSelectedGroupId(null);
+    }
+  }, [selectedGroupId]);
+
   const getNodeSurroundings = useCallback((node) => {
     const surroundingNodes = new Set([node]);
     const surroundingLinks = new Set();
