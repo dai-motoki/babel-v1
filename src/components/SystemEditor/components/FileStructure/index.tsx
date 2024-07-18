@@ -29,7 +29,11 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showFileNames, setShowFileNames] = useState(false);
   const [clickedNode, setClickedNode] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  const [highlightedNodes, setHighlightedNodes] = useState([]);
+  const [highlightedNodes, setHighlightedNodes] = useState(() => {
+    // ローカルストレージから初期値を読み込む
+    const savedNodes = localStorage.getItem('highlightedNodes');
+    return savedNodes ? JSON.parse(savedNodes) : [];
+  });
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectionPath, setSelectionPath] = useState([]);
   const [selectedNodesInPath, setSelectedNodesInPath] = useState([]);
@@ -75,11 +79,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   const highlightNode = useCallback((node) => {
     setHighlightedNodes(prevNodes => {
-      if (prevNodes.some(n => n.id === node.id)) {
-        return prevNodes.filter(n => n.id !== node.id);
-      } else {
-        return [...prevNodes, node];
-      }
+      const updatedNodes = prevNodes.some(n => n.id === node.id)
+        ? prevNodes.filter(n => n.id !== node.id)
+        : [...prevNodes, node];
+      
+      // ローカルストレージに保存
+      localStorage.setItem('highlightedNodes', JSON.stringify(updatedNodes));
+      
+      return updatedNodes;
     });
   }, []);
 
@@ -309,6 +316,11 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     enablePanInteraction: !isSelectionMode,
     enableZoomInteraction: !isSelectionMode,
   }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodes, selectedNodesInPath, isSelectionMode]);
+
+  // highlightedNodesが変更されたときにローカルストレージに保存する
+  useEffect(() => {
+    localStorage.setItem('highlightedNodes', JSON.stringify(highlightedNodes));
+  }, [highlightedNodes]);
 
   if (!selectedSystem) {
     return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('システムディレクトリを選択してください')}</div>;

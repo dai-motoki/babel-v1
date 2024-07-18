@@ -49,7 +49,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const chatBoxRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [showTaskManager, setShowTaskManager] = useState(false);
+  const [showTaskManager, setShowTaskManager] = useState(true);
 
   
   const [storedMessages, setStoredMessages] = useLocalStorage<AIMessage[]>('aiChatMessages', []);
@@ -244,8 +244,8 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         ref={chatBoxRef}
         style={{
           position: 'absolute',
-          left: `${position.x}px`,
-          top: `${position.y}px`,
+          left: `${position.x + 200}px`,
+          top: `${position.y + 150}px`,
         }}
         className="w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
       >
@@ -370,8 +370,8 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         <div
           style={{
             position: 'absolute',
-            left: `${position.x + 400}px`,
-            top: `${position.y}px`,
+            left: `${position.x + 200 + 400}px`,
+            top: `${position.y + 150}px`,
           }}
         >
           <TaskManager tasks={tasks} onClose={() => setShowTaskManager(false)} />
