@@ -30,16 +30,43 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showFileNames, setShowFileNames] = useState(false);
   const [clickedNode, setClickedNode] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
-    const savedGroups = localStorage.getItem('highlightedNodeGroups');
-    return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, nodes: [] }];
-  });
+  // const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
+  //   const savedGroups = localStorage.getItem('highlightedNodeGroups');
+  //   return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, nodes: [] }];
+  // });
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectionPath, setSelectionPath] = useState([]);
   const [selectedNodesInPath, setSelectedNodesInPath] = useState([]);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showTaskManager, setShowTaskManager] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
+
+// highlightedNodeGroupsの型を更新
+const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
+  const savedGroups = localStorage.getItem('highlightedNodeGroups');
+  return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, name: 'グループ1', nodes: [] }];
+});
+
+// ... 既存のコード ...
+
+// addNewHighlightGroup関数を更新
+const addNewHighlightGroup = useCallback(() => {
+  setHighlightedNodeGroups(prevGroups => {
+    const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
+    return [...prevGroups, { id: newGroupId, name: `グループ${newGroupId}`, nodes: [] }];
+  });
+}, []);
+
+// グループ名を編集する関数を追加
+const editGroupName = useCallback((groupId: number, newName: string) => {
+  setHighlightedNodeGroups(prevGroups =>
+    prevGroups.map(group =>
+      group.id === groupId ? { ...group, name: newName } : group
+    )
+  );
+}, []);
+
+
 
   const loadDirectoryStructure = useCallback(async () => {
     try {
@@ -110,12 +137,12 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     });
   }, []);
 
-  const addNewHighlightGroup = useCallback(() => {
-    setHighlightedNodeGroups(prevGroups => {
-      const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
-      return [...prevGroups, { id: newGroupId, nodes: [] }];
-    });
-  }, []);
+  // const addNewHighlightGroup = useCallback(() => {
+  //   setHighlightedNodeGroups(prevGroups => {
+  //     const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
+  //     return [...prevGroups, { id: newGroupId, nodes: [] }];
+  //   });
+  // }, []);
 
   const removeHighlightGroup = useCallback((groupId) => {
     setHighlightedNodeGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
@@ -386,18 +413,16 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         </div>
       </div>
 
-
-
       <div className="absolute bottom-1/4 left-0 p-2 z-10 max-h-[50vh] overflow-y-auto">
         <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
           <div className="flex border-b border-gray-600">
-            {highlightedNodeGroups.map((group, index) => (
+            {highlightedNodeGroups.map((group) => (
               <button
                 key={group.id}
                 className={`px-3 py-2 ${selectedGroupId === group.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-[#d4d4d4]'}`}
                 onClick={() => setSelectedGroupId(group.id)}
               >
-                <Highlighter className="w-4 h-4" />
+                <Network className="w-4 h-4" />
               </button>
             ))}
             <button
@@ -417,7 +442,12 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
                     onChange={(e) => toggleGroupHighlight(group.id, e.target.checked)}
                     className="mr-2"
                   />
-                  <span className="text-[#d4d4d4] text-sm">{t('グループ全体')}</span>
+                  <input
+                    type="text"
+                    value={group.name}
+                    onChange={(e) => editGroupName(group.id, e.target.value)}
+                    className="bg-transparent text-[#d4d4d4] text-sm border-b border-gray-600 focus:outline-none focus:border-blue-500"
+                  />
                 </div>
                 <button
                   onClick={() => removeHighlightGroup(group.id)}
@@ -443,8 +473,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           ))}
         </div>
       </div>
-
-
 
       <div className="flex items-center justify-between p-3">
         <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('プロジェクト構造')}</h3>
