@@ -1,7 +1,7 @@
 // TaskManager.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy, ChevronUp } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy, ChevronUp, Trash } from 'lucide-react';
 import Button from '../common/Button';
 
 interface Task {
@@ -18,9 +18,10 @@ interface Task {
 interface TaskManagerProps {
   tasks: Task[];
   onClose: () => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
-const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
+const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose, onDeleteTask }) => {
   const { t } = useTranslation();
   const [expandedTasks, setExpandedTasks] = useState<string[]>([]);
   const [expandedFiles, setExpandedFiles] = useState<{ [key: string]: boolean }>({});
@@ -72,23 +73,31 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
       <div className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[#4c4c4c] scrollbar-track-[#2d2d2d]">
         {tasks.map((task) => (
           <div key={task.id} className="bg-[#3c3c3c] rounded-lg p-3 text-sm">
-            <div 
-              className="flex items-center cursor-pointer" 
-              onClick={() => toggleTask(task.id)}
-            >
-              {expandedTasks.includes(task.id) ? (
-                <ChevronDown className="w-4 h-4 mr-2" />
-              ) : (
-                <ChevronRight className="w-4 h-4 mr-2" />
-              )}
-              <span className="font-bold">{t('タスク')} #{task.id}</span>
-              <span className="ml-auto">
-                {task.status === 'completed' ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
+            <div className="flex items-center justify-between">
+              <div 
+                className="flex items-center cursor-pointer flex-grow" 
+                onClick={() => toggleTask(task.id)}
+              >
+                {expandedTasks.includes(task.id) ? (
+                  <ChevronDown className="w-4 h-4 mr-2" />
                 ) : (
-                  <Clock className="w-4 h-4 text-yellow-500" />
+                  <ChevronRight className="w-4 h-4 mr-2" />
                 )}
-              </span>
+                <span className="font-bold">{t('タスク')} #{task.id}</span>
+                <span className="ml-auto mr-2">
+                  {task.status === 'completed' ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-yellow-500" />
+                  )}
+                </span>
+              </div>
+              <Button
+                onClick={() => onDeleteTask(task.id)}
+                className="text-red-500 hover:text-red-700 transition-colors duration-200"
+              >
+                <Trash className="w-4 h-4" />
+              </Button>
             </div>
             {expandedTasks.includes(task.id) && (
               <div className="mt-2 pl-6">

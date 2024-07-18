@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTranslation } from 'react-i18next';
@@ -238,6 +238,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     );
   };
 
+  const onDeleteTask = useCallback((taskId: string) => {
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+  }, []);
+
   return (
     <>
       <div
@@ -374,7 +378,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             top: `${position.y + 150}px`,
           }}
         >
-          <TaskManager tasks={tasks} onClose={() => setShowTaskManager(false)} />
+          <TaskManager 
+            tasks={tasks} 
+            onClose={() => setShowTaskManager(false)} 
+            onDeleteTask={onDeleteTask}
+          />
         </div>
       )}
     </>
