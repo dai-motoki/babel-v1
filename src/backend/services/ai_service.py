@@ -6,6 +6,9 @@ from services.anthropic_service import generate_text_anthropic
 from utils.version_control import version_control
 from utils.process import process
 import subprocess
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ベースファイルパスを設定
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -126,7 +129,7 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
         content = file.read()
     python_process_prompt = f"""
     ファイルの書き込みはpythonファイルを作成します。
-
+    - 変更前にgit保存。変更後はgit保存しない
     - python subprocess モジュール使用
     - {full_path}への直接書き込み
     - プログラムは全文出力し、コードブロックで囲うこと。省略は一切しない。
@@ -135,9 +138,6 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
     """ + python_process_prompt
 
 
-    import logging
-
-    logger = logging.getLogger(__name__)
 
     logger.info(f"Anthropicからテキストを生成します。プロンプト: {prompt[:100]}...")
     result = await generate_text_anthropic(prompt)
@@ -176,7 +176,7 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
         logger.error(f"コードの実行中にエラーが発生しました: {e}")
         # result = {"generated_text": code}
         result = {"generated_text": code, "execution_error": e.output}
-    result = {"generated_text": code}
+    result = {"generated_text": text}
     
     # # 一時ファイルを削除
     # os.remove(temp_file_name)
