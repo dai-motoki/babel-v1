@@ -129,6 +129,9 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
         content = file.read()
     python_process_prompt = f"""
     ファイルの書き込みはpythonファイルを作成します。
+    - 1枚のファイルで書いてください。複数に分けてはいけません。
+
+    - ... (他の既存のコードは変更なし)などは書かない。絶対に省略しない
     - 変更前にgit保存。変更後はgit保存しない
     - python subprocess モジュール使用
     - {full_path}への直接書き込み
@@ -151,19 +154,19 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
 
     logger.info("テキスト処理が完了しました。")
     
-    # 現在の日付を取得
+    # 現在の日付と時刻を取得
     import datetime
-    current_date = datetime.datetime.now().strftime("%Y%m%d")
+    current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     
     # 一時ファイル名を生成
-    temp_file_name = f"../.history/{current_date}.py"
+    temp_file_name = f"../.history/{current_datetime}.py"
     logger.info(f"一時ファイル名を生成しました: {temp_file_name}")
     
     # 一時ファイルにコードを書き込む
     os.makedirs(os.path.dirname(temp_file_name), exist_ok=True)
     with open(temp_file_name, 'w') as temp_file:
         temp_file.write(code)
-    # logger.info(f"コードを一時ファイルに書き込みました: {temp_file_name}")
+    logger.info(f"コードを一時ファイルに書き込みました: {temp_file_name}")
     
     # # サブプロセスでコードを実行
     try:
