@@ -1,7 +1,7 @@
 // TaskManager.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy, ChevronUp } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy, ChevronUp, StopCircle, Play } from 'lucide-react';
 import Button from '../common/Button';
 
 interface Task {
@@ -10,17 +10,19 @@ interface Task {
   endTime?: Date;
   relatedFiles: string[];
   name: string;
-  status: 'pending' | 'completed';
-  fileProgress: { [key: string]: 'pending' | 'completed' };
+  status: 'pending' | 'completed' | 'stopped';
+  fileProgress: { [key: string]: 'pending' | 'completed' | 'stopped' };
   fileContents: { [key: string]: string };
 }
 
 interface TaskManagerProps {
   tasks: Task[];
   onClose: () => void;
+  onStopTask: (taskId: string) => void;
+  onRestartTask: (taskId: string) => void; // Added this line
 }
 
-const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
+const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose, onStopTask, onRestartTask }) => {
   const { t } = useTranslation();
   const [expandedTasks, setExpandedTasks] = useState<string[]>([]);
   const [expandedFiles, setExpandedFiles] = useState<{ [key: string]: boolean }>({});
@@ -72,30 +74,50 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
       <div className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[#4c4c4c] scrollbar-track-[#2d2d2d]">
         {tasks.map((task) => (
           <div key={task.id} className="bg-[#3c3c3c] rounded-lg p-3 text-sm">
-            <div 
-              className="flex items-center cursor-pointer" 
-              onClick={() => toggleTask(task.id)}
-            >
-              {expandedTasks.includes(task.id) ? (
-                <ChevronDown className="w-4 h-4 mr-2" />
-              ) : (
-                <ChevronRight className="w-4 h-4 mr-2" />
-              )}
-              <span className="font-bold">{t('タスク')} #{task.id}</span>
-              <span className="ml-auto">
-                {task.status === 'completed' ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
+            <div className="flex items-center justify-between">
+              <div 
+                className="flex items-center cursor-pointer flex-grow" 
+                onClick={() => toggleTask(task.id)}
+              >
+                {expandedTasks.includes(task.id) ? (
+                  <ChevronDown className="w-4 h-4 mr-2" />
                 ) : (
-                  <Clock className="w-4 h-4 text-yellow-500" />
+                  <ChevronRight className="w-4 h-4 mr-2" />
                 )}
-              </span>
+                <span className="font-bold">{t('タスク')} #{task.id}</span>
+                <span className="ml-auto mr-2">
+                  {task.status === 'completed' ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : task.status === 'stopped' ? (
+                    <StopCircle className="w-4 h-4 text-red-500" />
+                  ) : (
+                    <Clock className="w-4 h-4 text-yellow-500" />
+                  )}
+                </span>
+              </div>
+              {task.status === 'pending' && (
+                <Button
+                  onClick={() => onStopTask(task.id)}
+                  className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                >
+                  <StopCircle className="w-4 h-4" />
+                </Button>
+              )}
+              {task.status === 'stopped' && (
+                <Button
+                  onClick={() => onRestartTask(task.id)}
+                  className="text-green-500 hover:text-green-700 transition-colors duration-200"
+                >
+                  <Play className="w-4 h-4" />
+                </Button>
+              )}
             </div>
             {expandedTasks.includes(task.id) && (
               <div className="mt-2 pl-6">
                 <div>{t('開始時間')}: {task.startTime.toLocaleString()}</div>
                 <div>{t('終了時間')}: {task.endTime ? task.endTime.toLocaleString() : t('進行中')}</div>
                 <div>{t('タスク名')}: {task.name}</div>
-                <div>{t('状態')}: {task.status === 'completed' ? t('完了') : t('進行中')}</div>
+                <div>{t('状態')}: {task.status === 'completed' ? t('完了') : task.status === 'stopped' ? t('停止') : t('進行中')}</div>
                 <div className="mt-2">
                   <div className="font-bold mb-1">{t('関連ファイル')}:</div>
                   {task.relatedFiles.map((file) => (
@@ -117,6 +139,8 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose }) => {
                         <div className="flex items-center">
                           {task.fileProgress[file] === 'completed' ? (
                             <CheckCircle className="w-4 h-4 text-green-500 ml-2 flex-shrink-0" />
+                          ) : task.fileProgress[file] === 'stopped' ? (
+                            <StopCircle className="w-4 h-4 text-red-500 ml-2 flex-shrink-0" />
                           ) : (
                             <Clock className="w-4 h-4 text-yellow-500 ml-2 flex-shrink-0" />
                           )}

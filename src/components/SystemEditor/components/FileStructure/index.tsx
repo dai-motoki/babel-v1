@@ -1,3 +1,4 @@
+
 import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import ForceGraph from './ForceGraph';
@@ -10,7 +11,7 @@ import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
-import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer } from 'lucide-react';
+import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus } from 'lucide-react';
 import AIChat from './AIChat';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
@@ -29,11 +30,43 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showFileNames, setShowFileNames] = useState(false);
   const [clickedNode, setClickedNode] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  const [highlightedNodes, setHighlightedNodes] = useState([]);
+  // const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
+  //   const savedGroups = localStorage.getItem('highlightedNodeGroups');
+  //   return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, nodes: [] }];
+  // });
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectionPath, setSelectionPath] = useState([]);
   const [selectedNodesInPath, setSelectedNodesInPath] = useState([]);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showTaskManager, setShowTaskManager] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+
+// highlightedNodeGroupsの型を更新
+const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
+  const savedGroups = localStorage.getItem('highlightedNodeGroups');
+  return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, name: 'グループ1', nodes: [] }];
+});
+
+// ... 既存のコード ...
+
+// addNewHighlightGroup関数を更新
+const addNewHighlightGroup = useCallback(() => {
+  setHighlightedNodeGroups(prevGroups => {
+    const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
+    return [...prevGroups, { id: newGroupId, name: `グループ${newGroupId}`, nodes: [] }];
+  });
+}, []);
+
+// グループ名を編集する関数を追加
+const editGroupName = useCallback((groupId: number, newName: string) => {
+  setHighlightedNodeGroups(prevGroups =>
+    prevGroups.map(group =>
+      group.id === groupId ? { ...group, name: newName } : group
+    )
+  );
+}, []);
+
+
 
   const loadDirectoryStructure = useCallback(async () => {
     try {
@@ -72,15 +105,51 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     }
   }, [isSelectionMode]);
 
-  const highlightNode = useCallback((node) => {
-    setHighlightedNodes(prevNodes => {
-      if (prevNodes.some(n => n.id === node.id)) {
-        return prevNodes.filter(n => n.id !== node.id);
-      } else {
-        return [...prevNodes, node];
-      }
+  const highlightNode = useCallback((node, groupId) => {
+    setHighlightedNodeGroups(prevGroups => {
+      return prevGroups.map(group => {
+        if (group.id === groupId) {
+          const nodeIndex = group.nodes.findIndex(n => n.id === node.id);
+          if (nodeIndex !== -1) {
+            const updatedNodes = [...group.nodes];
+            updatedNodes[nodeIndex] = { ...updatedNodes[nodeIndex], isSelected: !updatedNodes[nodeIndex].isSelected };
+            return { ...group, nodes: updatedNodes };
+          } else {
+            return { ...group, nodes: [...group.nodes, { ...node, isSelected: true }] };
+          }
+        }
+        return group;
+      });
     });
   }, []);
+
+  const toggleGroupHighlight = useCallback((groupId, isSelected) => {
+    setHighlightedNodeGroups(prevGroups => {
+      return prevGroups.map(group => {
+        if (group.id === groupId) {
+          return {
+            ...group,
+            nodes: group.nodes.map(node => ({ ...node, isSelected }))
+          };
+        }
+        return group;
+      });
+    });
+  }, []);
+
+  // const addNewHighlightGroup = useCallback(() => {
+  //   setHighlightedNodeGroups(prevGroups => {
+  //     const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
+  //     return [...prevGroups, { id: newGroupId, nodes: [] }];
+  //   });
+  // }, []);
+
+  const removeHighlightGroup = useCallback((groupId) => {
+    setHighlightedNodeGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
+    if (selectedGroupId === groupId) {
+      setSelectedGroupId(null);
+    }
+  }, [selectedGroupId]);
 
   const getNodeSurroundings = useCallback((node) => {
     const surroundingNodes = new Set([node]);
@@ -144,7 +213,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       setSelectedNodesInPath([]);
       setSelectionPath([]);
     }
-    // セレクトモードの切り替え時にグラフの操作を制御
     if (fgRef.current) {
       fgRef.current.d3Force('center', null);
       fgRef.current.d3Force('charge', null);
@@ -175,7 +243,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         return isPointInPolygon({ x, y }, selectionPath);
       });
       setSelectedNodesInPath(selectedNodes);
-      setSelectionPath([]);  // Clear the selection path
+      setSelectionPath([]);
     }
   };
 
@@ -194,7 +262,19 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const handleSelectionAction = (action) => {
     switch (action) {
       case 'highlight':
-        setHighlightedNodes(prevNodes => [...prevNodes, ...selectedNodesInPath]);
+        setHighlightedNodeGroups(prevGroups => {
+          const lastGroup = prevGroups[prevGroups.length - 1];
+          return [
+            ...prevGroups.slice(0, -1),
+            {
+              ...lastGroup,
+              nodes: [
+                ...lastGroup.nodes,
+                ...selectedNodesInPath.map(node => ({ ...node, isSelected: true }))
+              ]
+            }
+          ];
+        });
         break;
       case 'surroundings':
         const surroundingNodes = new Set(selectedNodesInPath);
@@ -221,10 +301,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     setSelectionPath([]);
   };
 
-  const startAIChatWithHighlightedNodes = () => {
-    setShowAIChat(true);
-  };
-
   const forceGraphConfig = useMemo(() => ({
     graphData: { nodes: filteredNodes, links: filteredLinks },
     nodeLabel: "name",
@@ -241,14 +317,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       ctx.fillStyle = getNodeColor(node);
       ctx.fill();
 
-      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodes.some(n => n.id === node.id) || selectedNodesInPath.some(n => n.id === node.id)) {
+      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) || selectedNodesInPath.some(n => n.id === node.id)) {
         const baseGlowRadius = node.type === 'directory' ? 8 : 6;
         const time = performance.now() / 1000;
         const glowRadius = baseGlowRadius + Math.sin(time * 1.5) * 2;
         
         if (isFinite(node.x) && isFinite(node.y)) {
           const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowRadius);
-          if (highlightedNodes.some(n => n.id === node.id)) {
+          if (highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected))) {
             gradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.7 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -278,12 +354,12 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         ctx.beginPath();
         const circleRadius = node.type === 'directory' ? 6 : 4;
         ctx.arc(node.x, node.y, circleRadius, 0, 2 * Math.PI);
-        ctx.strokeStyle = highlightedNodes.some(n => n.id === node.id) ? 'rgba(255, 255, 255, 1)' : 
+        ctx.strokeStyle = highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) ? 'rgba(255, 255, 255, 1)' : 
                           node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : 
                           node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 
                           selectedNodesInPath.some(n => n.id === node.id) ? 'rgba(255, 0, 0, 0.8)' :
                           'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = highlightedNodes.some(n => n.id === node.id) || selectedNodesInPath.some(n => n.id === node.id) ? 3 : 2;
+        ctx.lineWidth = highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) || selectedNodesInPath.some(n => n.id === node.id) ? 3 : 2;
         ctx.stroke();
       }
 
@@ -311,7 +387,11 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     enableNodeDrag: !isSelectionMode,
     enablePanInteraction: !isSelectionMode,
     enableZoomInteraction: !isSelectionMode,
-  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodes, selectedNodesInPath, isSelectionMode]);
+  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode]);
+
+  useEffect(() => {
+    localStorage.setItem('highlightedNodeGroups', JSON.stringify(highlightedNodeGroups));
+  }, [highlightedNodeGroups]);
 
   if (!selectedSystem) {
     return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('システムディレクトリを選択してください')}</div>;
@@ -332,22 +412,68 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           <RecentChanges changes={changes} />
         </div>
       </div>
-      <div className="absolute bottom-1/4 left-0 p-2 z-10">
+
+      <div className="absolute bottom-1/4 left-0 p-2 z-10 max-h-[50vh] overflow-y-auto">
         <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
-          <h4 className="text-[#d4d4d4] font-medium mb-2">{t('ハイライト済みノード')}</h4>
-          <ul className="text-[#d4d4d4] text-sm max-h-40 overflow-y-auto">
-            {highlightedNodes.map((node) => (
-              <li key={node.id}>{node.id || node.name}</li>
+          <div className="flex border-b border-gray-600">
+            {highlightedNodeGroups.map((group) => (
+              <button
+                key={group.id}
+                className={`px-3 py-2 ${selectedGroupId === group.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-[#d4d4d4]'}`}
+                onClick={() => setSelectedGroupId(group.id)}
+              >
+                <Network className="w-4 h-4" />
+              </button>
             ))}
-          </ul>
-          {highlightedNodes.length > 0 && (
-            <Button onClick={startAIChatWithHighlightedNodes} className="mt-2 text-xs flex items-center">
-              <MessageCircle className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
-              <span>{t('AIチャットを開始')}</span>
-            </Button>
-          )}
+            <button
+              className="px-3 py-2 text-[#d4d4d4]"
+              onClick={addNewHighlightGroup}
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+          {highlightedNodeGroups.map((group) => (
+            <div key={group.id} className={`mt-2 ${selectedGroupId === group.id ? '' : 'hidden'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={group.nodes.every(node => node.isSelected)}
+                    onChange={(e) => toggleGroupHighlight(group.id, e.target.checked)}
+                    className="mr-2"
+                  />
+                  <input
+                    type="text"
+                    value={group.name}
+                    onChange={(e) => editGroupName(group.id, e.target.value)}
+                    className="bg-transparent text-[#d4d4d4] text-sm border-b border-gray-600 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <button
+                  onClick={() => removeHighlightGroup(group.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash className="w-4 h-4" />
+                </button>
+              </div>
+              <ul className="text-[#d4d4d4] text-sm max-h-40 overflow-y-auto">
+                {group.nodes.map((node) => (
+                  <li key={node.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={node.isSelected}
+                      onChange={() => highlightNode(node, group.id)}
+                      className="mr-2"
+                    />
+                    <span>{node.id || node.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
+
       <div className="flex items-center justify-between p-3">
         <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('プロジェクト構造')}</h3>
         <div className="flex space-x-2">
@@ -416,11 +542,8 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
             )}
 
             {clickedNode && !isSelectionMode && (
-
-
-
               <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ left: menuPosition.x, top: menuPosition.y, transform: 'translate(-50%, -100%)' }}>
-                <Button onClick={() => { highlightNode(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
+                <Button onClick={() => { highlightNode(clickedNode, highlightedNodeGroups[highlightedNodeGroups.length - 1].id); setClickedNode(null); }} className="text-xs flex items-center">
                   <Highlighter className="w-3 h-3 mr-2 text-yellow-200 opacity-50" />
                   <span>{t('ハイライト')}</span>
                 </Button>
@@ -477,10 +600,26 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           </div>
         </div>
       </div>
+      <div className="fixed bottom-4 right-4 flex flex-col space-y-2 z-50">
+        <Button
+          onClick={() => setShowAIChat(!showAIChat)}
+          className="bg-[#3c3c3c] text-[#d4d4d4] rounded-full p-2 hover:bg-[#4c4c4c] transition-all duration-200"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </Button>
+        <Button
+          onClick={() => setShowTaskManager(!showTaskManager)}
+          className="bg-[#3c3c3c] text-[#d4d4d4] rounded-full p-2 hover:bg-[#4c4c4c] transition-all duration-200"
+        >
+          <ListTodo className="w-6 h-6" />
+        </Button>
+      </div>
       {showAIChat && (
         <AIChat
-          nodes={highlightedNodes}
+          nodes={highlightedNodeGroups.flatMap(group => group.nodes.filter(node => node.isSelected))}
           onClose={() => setShowAIChat(false)}
+          showTaskManager={showTaskManager}
+          setShowTaskManager={setShowTaskManager}
         />
       )}
     </div>
