@@ -125,15 +125,14 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
     with open(full_path, 'r') as file:
         content = file.read()
     python_process_prompt = f"""
-    上記を実現するpythonファイルを作成します。
+    ファイルの書き込みはpythonファイルを作成します。
 
     - python subprocess モジュール使用
     - {full_path}への直接書き込み
-        
+    - プログラムは全文出力し、コードブロックで囲うこと。省略は一切しない。
     """
-    prompt = f"""\n\n{content} \n\n に対して、{feature_request}
+    prompt = f"""\n\n{content} \n\n に対して、{feature_request} を実現するコードを提案してください。
     """ + python_process_prompt
-    # プログラムは全文出力し、コードブロックで囲うこと。省略は一切しない。"""
 
 
     import logging
