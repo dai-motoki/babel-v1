@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTranslation } from 'react-i18next';
 import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Wrench } from 'lucide-react';
 import Button from '../common/Button';
@@ -49,7 +51,27 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showTaskManager, setShowTaskManager] = useState(false);
 
+  
+  const [storedMessages, setStoredMessages] = useLocalStorage<AIMessage[]>('aiChatMessages', []);
+  const [storedTasks, setStoredTasks] = useLocalStorage<Task[]>('aiChatTasks', []);
+
+
   const { onMouseDown } = useDraggable(chatBoxRef, setPosition, 5);
+
+  
+  useEffect(() => {
+    setMessages(storedMessages);
+    setTasks(storedTasks);
+  }, []);
+
+  useEffect(() => {
+    setStoredMessages(messages);
+  }, [messages]);
+
+  useEffect(() => {
+    setStoredTasks(tasks);
+  }, [tasks]);
+
 
   // サンプル質問の配列
   const sampleQuestions = [
