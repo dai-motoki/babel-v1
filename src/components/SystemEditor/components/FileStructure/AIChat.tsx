@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTranslation } from 'react-i18next';
-import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Wrench } from 'lucide-react';
+import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Wrench, StopCircle } from 'lucide-react';
 import Button from '../common/Button';
 import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
@@ -14,7 +14,7 @@ interface AIMessage {
   type: 'system' | 'user' | 'ai';
   content: string;
   filePath?: string;
-  status?: 'pending' | 'completed';
+  status?: 'pending' | 'completed' | 'stopped';
   isExpanded?: boolean;
   id: string;
 }
@@ -32,8 +32,8 @@ interface Task {
   endTime?: Date;
   relatedFiles: string[];
   name: string;
-  status: 'pending' | 'completed';
-  fileProgress: { [key: string]: 'pending' | 'completed' };
+  status: 'pending' | 'completed' | 'stopped';
+  fileProgress: { [key: string]: 'pending' | 'completed' | 'stopped' };
   fileContents: { [key: string]: string };
 }
 
@@ -44,7 +44,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     { type: 'system', content: 'ハイライトされたノードに関する質問をどうぞ。以下は質問の例です：', id: 'initial' },
   ]);
   const [input, setInput] = useState('');
-  const [pendingRequests, setPendingRequests] = useState<string[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<{ [key: string]: AbortController }>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 20, y: 20 });
@@ -127,22 +127,30 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
       ]);
     });
 
-    setPendingRequests((prev) => [...prev, ...aiMessageIds]);
-
     try {
       // APIエンドポイントの選択
       const endpoint = isProcessing ? '/v1/ai-file-ops/multi-ai-process' : '/v1/ai-file-ops/multi-ai-reply';
-      const response = await axios.post(`http://localhost:8000${endpoint}`, {
-        version_control: false,
-        file_paths: filePaths,
-        change_type: 'smart',
-        execution_mode: 'parallel',
-        feature_request: input,
-      });
+      
+      const controllers = aiMessageIds.map(() => new AbortController());
+      setPendingRequests(prev => ({
+        ...prev,
+        ...Object.fromEntries(aiMessageIds.map((id, index) => [id, controllers[index]]))
+      }));
+
+      const responses = await Promise.all(filePaths.map((filePath, index) => 
+        axios.post(`http://localhost:8000${endpoint}`, {
+          version_control: false,
+          file_paths: [filePath],
+          change_type: 'smart',
+          execution_mode: 'parallel',
+          feature_request: input,
+        }, { signal: controllers[index].signal })
+      ));
 
       // レスポンス処理
-      response.data.result.forEach((result: any) => {
-        const aiMessageId = aiMessageIds[filePaths.indexOf(result.file_path)];
+      responses.forEach((response, index) => {
+        const result = response.data.result[0];
+        const aiMessageId = aiMessageIds[index];
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === aiMessageId
@@ -150,7 +158,6 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
               : msg
           )
         );
-        setPendingRequests((prev) => prev.filter((id) => id !== aiMessageId));
 
         // タスクの更新
         setTasks((prev) =>
@@ -185,12 +192,24 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         )
       );
     } catch (error) {
-      console.error('AI response error:', error);
-      setMessages((prev) => [
-        ...prev,
-        { type: 'system', content: t('エラーが発生しました。もう一度お試しください。'), id: Date.now().toString() },
-      ]);
-      setPendingRequests((prev) => prev.filter((id) => !aiMessageIds.includes(id)));
+      if (axios.isCancel(error)) {
+        console.log('リクエストがキャンセルされました');
+      } else {
+        console.error('AI response error:', error);
+        setMessages((prev) => [
+          ...prev,
+          { type: 'system', content: t('エラーが発生しました。もう一度お試しください。'), id: Date.now().toString() },
+        ]);
+      }
+    } finally {
+      // クリーンアップ
+      aiMessageIds.forEach(id => {
+        setPendingRequests(prev => {
+          const newRequests = { ...prev };
+          delete newRequests[id];
+          return newRequests;
+        });
+      });
     }
   };
 
@@ -238,9 +257,41 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     );
   };
 
-  const onDeleteTask = useCallback((taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-  }, []);
+  const stopTask = useCallback((taskId: string) => {
+    setTasks(prevTasks => prevTasks.map(task => 
+      task.id === taskId 
+        ? { 
+            ...task, 
+            status: 'stopped', 
+            endTime: new Date(),
+            fileProgress: Object.fromEntries(
+              Object.entries(task.fileProgress).map(([key, value]) => 
+                [key, value === 'pending' ? 'stopped' : value]
+              )
+            )
+          } 
+        : task
+    ));
+
+    // 関連するAIメッセージの状態も更新
+    setMessages(prevMessages => prevMessages.map(msg => 
+      msg.id.startsWith(taskId) && msg.status === 'pending'
+        ? { ...msg, status: 'stopped' }
+        : msg
+    ));
+
+    // 進行中のリクエストを中止
+    Object.entries(pendingRequests).forEach(([key, controller]) => {
+      if (key.startsWith(taskId)) {
+        controller.abort();
+        setPendingRequests(prev => {
+          const newRequests = { ...prev };
+          delete newRequests[key];
+          return newRequests;
+        });
+      }
+    });
+  }, [pendingRequests]);
 
   return (
     <>
@@ -298,8 +349,10 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                   <div className="flex items-center">
                     {message.status === 'pending' ? (
                       <Loader2 className="w-4 h-4 animate-spin text-[#3b9cff]" />
-                    ) : (
+                    ) : message.status === 'completed' ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <StopCircle className="w-4 h-4 text-red-500" />
                     )}
                     <Button
                       onClick={() => toggleExpand(index)}
@@ -381,7 +434,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
           <TaskManager 
             tasks={tasks} 
             onClose={() => setShowTaskManager(false)} 
-            onDeleteTask={onDeleteTask}
+            onStopTask={stopTask}
           />
         </div>
       )}
