@@ -10,7 +10,7 @@ import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
-import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer } from 'lucide-react';
+import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo } from 'lucide-react';
 import AIChat from './AIChat';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
@@ -34,6 +34,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [selectionPath, setSelectionPath] = useState([]);
   const [selectedNodesInPath, setSelectedNodesInPath] = useState([]);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showTaskManager, setShowTaskManager] = useState(false);
 
   const loadDirectoryStructure = useCallback(async () => {
     try {
@@ -221,10 +222,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     setSelectionPath([]);
   };
 
-  const startAIChatWithHighlightedNodes = () => {
-    setShowAIChat(true);
-  };
-
   const forceGraphConfig = useMemo(() => ({
     graphData: { nodes: filteredNodes, links: filteredLinks },
     nodeLabel: "name",
@@ -340,12 +337,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               <li key={node.id}>{node.id || node.name}</li>
             ))}
           </ul>
-          {highlightedNodes.length > 0 && (
-            <Button onClick={startAIChatWithHighlightedNodes} className="mt-2 text-xs flex items-center">
-              <MessageCircle className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
-              <span>{t('AIチャットを開始')}</span>
-            </Button>
-          )}
         </div>
       </div>
       <div className="flex items-center justify-between p-3">
@@ -477,10 +468,27 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           </div>
         </div>
       </div>
+      {/* 右下にAIチャットとタスク管理を開くボタンを配置 */}
+      <div className="fixed bottom-4 right-4 flex flex-col space-y-2 z-50">
+        <Button
+          onClick={() => setShowAIChat(!showAIChat)}
+          className="bg-[#3c3c3c] text-[#d4d4d4] rounded-full p-2 hover:bg-[#4c4c4c] transition-all duration-200"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </Button>
+        <Button
+          onClick={() => setShowTaskManager(!showTaskManager)}
+          className="bg-[#3c3c3c] text-[#d4d4d4] rounded-full p-2 hover:bg-[#4c4c4c] transition-all duration-200"
+        >
+          <ListTodo className="w-6 h-6" />
+        </Button>
+      </div>
       {showAIChat && (
         <AIChat
           nodes={highlightedNodes}
           onClose={() => setShowAIChat(false)}
+          showTaskManager={showTaskManager}
+          setShowTaskManager={setShowTaskManager}
         />
       )}
     </div>
