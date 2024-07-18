@@ -293,6 +293,118 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     });
   }, [pendingRequests]);
 
+  // 新しい関数: タスクを再開する
+  const restartTask = useCallback(async (taskId: string) => {
+    // タスクの状態を更新
+    setTasks(prevTasks => prevTasks.map(task => 
+      task.id === taskId 
+        ? { 
+            ...task, 
+            status: 'pending', 
+            fileProgress: Object.fromEntries(
+              Object.entries(task.fileProgress).map(([key, value]) => 
+                [key, value === 'stopped' ? 'pending' : value]
+              )
+            )
+          } 
+        : task
+    ));
+
+    // 関連するAIメッセージの状態を更新
+    setMessages(prevMessages => prevMessages.map(msg => 
+      msg.id.startsWith(taskId) && msg.status === 'stopped'
+        ? { ...msg, status: 'pending' }
+        : msg
+    ));
+
+    // タスクを取得
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    // APIを呼び出してタスクを再開
+    try {
+      const controllers = task.relatedFiles.map(() => new AbortController());
+      setPendingRequests(prev => ({
+        ...prev,
+        ...Object.fromEntries(task.relatedFiles.map((file, index) => [`${taskId}-${file}`, controllers[index]]))
+      }));
+
+      const responses = await Promise.all(task.relatedFiles.map((filePath, index) => 
+        axios.post('http://localhost:8000/v1/ai-file-ops/multi-ai-reply', {
+          version_control: false,
+          file_paths: [filePath],
+          change_type: 'smart',
+          execution_mode: 'parallel',
+          feature_request: task.name,
+        }, { signal: controllers[index].signal })
+      ));
+
+      // レスポンス処理
+      responses.forEach((response, index) => {
+        const result = response.data.result[0];
+        const aiMessageId = `${taskId}-${task.relatedFiles[index]}`;
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId
+              ? { ...msg, content: result.result.generated_text, status: 'completed' }
+              : msg
+          )
+        );
+
+        // タスクの更新
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  fileProgress: {
+                    ...t.fileProgress,
+                    [result.file_path]: 'completed',
+                  },
+                  fileContents: {
+                    ...t.fileContents,
+                    [result.file_path]: result.result.generated_text,
+                  },
+                }
+              : t
+          )
+        );
+      });
+
+      // タスクの完了
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                status: 'completed',
+                endTime: new Date(),
+              }
+            : t
+        )
+      );
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        console.log('リクエストがキャンセルされました');
+      } else {
+        console.error('AI response error:', error);
+        setMessages((prev) => [
+          ...prev,
+          { type: 'system', content: t('エラーが発生しました。もう一度お試しください。'), id: Date.now().toString() },
+        ]);
+      }
+    } finally {
+      // クリーンアップ
+      task.relatedFiles.forEach(file => {
+        setPendingRequests(prev => {
+          const newRequests = { ...prev };
+          delete newRequests[`${taskId}-${file}`];
+          return newRequests;
+        });
+      });
+    }
+  }, [tasks, setMessages, setTasks, setPendingRequests, t]);
+
   return (
     <>
       <div
@@ -435,6 +547,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             tasks={tasks} 
             onClose={() => setShowTaskManager(false)} 
             onStopTask={stopTask}
+            onRestartTask={restartTask}
           />
         </div>
       )}

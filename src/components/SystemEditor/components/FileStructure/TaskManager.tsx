@@ -1,7 +1,7 @@
 // TaskManager.tsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy, ChevronUp, StopCircle } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Clock, CheckCircle, Copy, ChevronUp, StopCircle, Play } from 'lucide-react';
 import Button from '../common/Button';
 
 interface Task {
@@ -19,9 +19,10 @@ interface TaskManagerProps {
   tasks: Task[];
   onClose: () => void;
   onStopTask: (taskId: string) => void;
+  onRestartTask: (taskId: string) => void; // Added this line
 }
 
-const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose, onStopTask }) => {
+const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose, onStopTask, onRestartTask }) => {
   const { t } = useTranslation();
   const [expandedTasks, setExpandedTasks] = useState<string[]>([]);
   const [expandedFiles, setExpandedFiles] = useState<{ [key: string]: boolean }>({});
@@ -100,6 +101,14 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, onClose, onStopTask })
                   className="text-red-500 hover:text-red-700 transition-colors duration-200"
                 >
                   <StopCircle className="w-4 h-4" />
+                </Button>
+              )}
+              {task.status === 'stopped' && (
+                <Button
+                  onClick={() => onRestartTask(task.id)}
+                  className="text-green-500 hover:text-green-700 transition-colors duration-200"
+                >
+                  <Play className="w-4 h-4" />
                 </Button>
               )}
             </div>
