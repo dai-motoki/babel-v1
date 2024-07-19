@@ -411,7 +411,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         ref={chatBoxRef}
         style={{
           position: 'absolute',
-          left: `${position.x + 200}px`,
+          left: `${position.x + 500}px`,
           top: `${position.y + 150}px`,
         }}
         className="w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
@@ -539,7 +539,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         <div
           style={{
             position: 'absolute',
-            left: `${position.x + 200 + 400}px`,
+            left: `${position.x + 500 + 400}px`,
             top: `${position.y + 150}px`,
           }}
         >

@@ -1,7 +1,9 @@
-
 import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import ForceGraph from './ForceGraph';
+import ForceGraph2D from 'react-force-graph-2d';
+import ForceGraph3D from 'react-force-graph-3d';
+import * as THREE from 'three';
+import SpriteText from 'three-spritetext';
 import MockEditor from './MockEditor';
 import SearchBar from './SearchBar';
 import RecentChanges from './RecentChanges';
@@ -11,7 +13,7 @@ import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
-import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus } from 'lucide-react';
+import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus, Box } from 'lucide-react';
 import AIChat from './AIChat';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
@@ -30,43 +32,35 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showFileNames, setShowFileNames] = useState(false);
   const [clickedNode, setClickedNode] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  // const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
-  //   const savedGroups = localStorage.getItem('highlightedNodeGroups');
-  //   return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, nodes: [] }];
-  // });
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectionPath, setSelectionPath] = useState([]);
   const [selectedNodesInPath, setSelectedNodesInPath] = useState([]);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showTaskManager, setShowTaskManager] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [is3D, setIs3D] = useState(false);
 
-// highlightedNodeGroupsの型を更新
-const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
-  const savedGroups = localStorage.getItem('highlightedNodeGroups');
-  return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, name: 'グループ1', nodes: [] }];
-});
-
-// ... 既存のコード ...
-
-// addNewHighlightGroup関数を更新
-const addNewHighlightGroup = useCallback(() => {
-  setHighlightedNodeGroups(prevGroups => {
-    const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
-    return [...prevGroups, { id: newGroupId, name: `グループ${newGroupId}`, nodes: [] }];
+  const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
+    const savedGroups = localStorage.getItem('highlightedNodeGroups');
+    return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, name: 'グループ1', nodes: [] }];
   });
-}, []);
 
-// グループ名を編集する関数を追加
-const editGroupName = useCallback((groupId: number, newName: string) => {
-  setHighlightedNodeGroups(prevGroups =>
-    prevGroups.map(group =>
-      group.id === groupId ? { ...group, name: newName } : group
-    )
-  );
-}, []);
+  
 
+  const addNewHighlightGroup = useCallback(() => {
+    setHighlightedNodeGroups(prevGroups => {
+      const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
+      return [...prevGroups, { id: newGroupId, name: `グループ${newGroupId}`, nodes: [] }];
+    });
+  }, []);
 
+  const editGroupName = useCallback((groupId: number, newName: string) => {
+    setHighlightedNodeGroups(prevGroups =>
+      prevGroups.map(group =>
+        group.id === groupId ? { ...group, name: newName } : group
+      )
+    );
+  }, []);
 
   const loadDirectoryStructure = useCallback(async () => {
     try {
@@ -136,13 +130,6 @@ const editGroupName = useCallback((groupId: number, newName: string) => {
       });
     });
   }, []);
-
-  // const addNewHighlightGroup = useCallback(() => {
-  //   setHighlightedNodeGroups(prevGroups => {
-  //     const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
-  //     return [...prevGroups, { id: newGroupId, nodes: [] }];
-  //   });
-  // }, []);
 
   const removeHighlightGroup = useCallback((groupId) => {
     setHighlightedNodeGroups(prevGroups => prevGroups.filter(group => group.id !== groupId));
@@ -389,9 +376,30 @@ const editGroupName = useCallback((groupId: number, newName: string) => {
     enableZoomInteraction: !isSelectionMode,
   }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode]);
 
+
+
+  const forceGraph3DConfig = {
+    ...forceGraphConfig,
+    nodeThreeObject: (node) => {
+      const sprite = new SpriteText(node.name);
+      sprite.color = getNodeColor(node);
+      sprite.textHeight = 8;
+      return sprite;
+    },
+    nodeThreeObjectExtend: true
+  };
+
+  const memoizedForceGraphData = useMemo(() => ({
+    graphData: { nodes: filteredNodes, links: filteredLinks },
+  }), [filteredNodes, filteredLinks]);
+
   useEffect(() => {
     localStorage.setItem('highlightedNodeGroups', JSON.stringify(highlightedNodeGroups));
   }, [highlightedNodeGroups]);
+
+  const toggle2D3D = () => {
+    setIs3D(!is3D);
+  };
 
   if (!selectedSystem) {
     return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('システムディレクトリを選択してください')}</div>;
@@ -486,6 +494,10 @@ const editGroupName = useCallback((groupId: number, newName: string) => {
             <MousePointer className="w-4 h-4 mr-2" />
             {isSelectionMode ? t('選択モード: ON') : t('選択モード: OFF')}
           </Button>
+          <Button onClick={toggle2D3D} aria-label={is3D ? "2Dビューに切り替え" : "3Dビューに切り替え"}>
+            <Box className="w-4 h-4 mr-2" />
+            {is3D ? "2D" : "3D"}
+          </Button>
         </div>
       </div>
       <div className="flex-grow flex">
@@ -499,10 +511,18 @@ const editGroupName = useCallback((groupId: number, newName: string) => {
             />
           ))}
           <div className="flex-grow relative">
-            <ForceGraph
-              ref={fgRef}
-              {...forceGraphConfig}
-            />
+            {is3D ? (
+      <ForceGraph3D
+      ref={fgRef}
+      {...forceGraph3DConfig}
+                {...memoizedForceGraphData}
+              />
+            ) : (
+              <ForceGraph2D
+                ref={fgRef}
+                {...forceGraphConfig}
+              />
+            )}
 
             {isSelectionMode && (
               <>
@@ -577,23 +597,11 @@ const editGroupName = useCallback((groupId: number, newName: string) => {
                 </Button>
                 <Button onClick={() => handleSelectionAction('surroundings')} className="text-xs flex items-center">
                   <Network className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
-                  <span>{t('選択の周辺取得')}</span>
+                  <span>{t('選択の周辺を表示')}</span>
                 </Button>
                 <Button onClick={() => handleSelectionAction('showEditor')} className="text-xs flex items-center">
                   <Edit className="w-3 h-3 mr-2 text-green-200 opacity-50" />
-                  <span>{t('選択をエディタ表示')}</span>
-                </Button>
-                <Button onClick={() => handleSelectionAction('chat')} className="text-xs flex items-center">
-                  <MessageCircle className="w-3 h-3 mr-2 text-red-200 opacity-50" />
-                  <span>{t('会話する')}</span>
-                </Button>
-                <Button onClick={() => handleSelectionAction('copy')} className="text-xs flex items-center">
-                  <Copy className="w-3 h-3 mr-2 text-purple-200 opacity-50" />
-                  <span>{t('選択をコピー')}</span>
-                </Button>
-                <Button onClick={() => handleSelectionAction('delete')} className="text-xs flex items-center">
-                  <Trash className="w-3 h-3 mr-2 text-red-500 opacity-50" />
-                  <span>{t('選択を削除')}</span>
+                  <span>{t('選択をエディタで開く')}</span>
                 </Button>
               </div>
             )}
@@ -616,11 +624,11 @@ const editGroupName = useCallback((groupId: number, newName: string) => {
       </div>
       {showAIChat && (
         <AIChat
-          nodes={highlightedNodeGroups.flatMap(group => group.nodes.filter(node => node.isSelected))}
-          onClose={() => setShowAIChat(false)}
-          showTaskManager={showTaskManager}
-          setShowTaskManager={setShowTaskManager}
-        />
+        nodes={highlightedNodeGroups.flatMap(group => group.nodes.filter(node => node.isSelected))}
+        onClose={() => setShowAIChat(false)}
+        showTaskManager={showTaskManager}
+        setShowTaskManager={setShowTaskManager}
+      />
       )}
     </div>
   );
