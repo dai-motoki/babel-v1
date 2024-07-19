@@ -416,14 +416,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   return (
     <div className="h-full border border-[#3c3c3c] rounded-md overflow-hidden bg-[#1e1e1e] flex flex-col relative">
-      <div className="absolute top-0 left-0 p-2 z-10">
-        <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
-          <RecentChanges changes={changes} />
-        </div>
-      </div>
+
 
       <Draggable bounds="parent">
-        <div className="absolute bottom-1/4 left-0 p-2 z-10 cursor-move">
+        <div className="absolute top-24 left-4 p-2 z-10 cursor-move">
           <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs max-h-[50vh] overflow-y-auto">
             <div className="flex border-b border-gray-600">
               {highlightedNodeGroups.map((group: any) => (
@@ -485,8 +481,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         </div>
       </Draggable>
 
+      <div className="absolute bottom-4 left-4 p-2 z-10">
+        <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
+          <RecentChanges changes={changes} />
+        </div>
+      </div>
+
       <div className="flex items-center justify-between p-3">
-        <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('プロジェクト構造')}</h3>
+        {/* <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('プロジェクト構造')}</h3> */}
         <div className="flex space-x-2">
           <SearchBar onSearch={handleSearch} />
           <Button onClick={showAll}>{t('全て表示')}</Button>
