@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-
+import Draggable from 'react-draggable';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTranslation } from 'react-i18next';
 import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Wrench, StopCircle } from 'lucide-react';
 import Button from '../common/Button';
-import { useDraggable } from '@/hooks/useDraggable';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import TaskManager from './TaskManager';
@@ -47,18 +46,12 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const [pendingRequests, setPendingRequests] = useState<{ [key: string]: AbortController }>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 20, y: 20 });
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showTaskManager, setShowTaskManager] = useState(true);
 
-  
   const [storedMessages, setStoredMessages] = useLocalStorage<AIMessage[]>('aiChatMessages', []);
   const [storedTasks, setStoredTasks] = useLocalStorage<Task[]>('aiChatTasks', []);
 
-
-  const { onMouseDown } = useDraggable(chatBoxRef, setPosition, 5);
-
-  
   useEffect(() => {
     setMessages(storedMessages);
     setTasks(storedTasks);
@@ -71,7 +64,6 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   useEffect(() => {
     setStoredTasks(tasks);
   }, [tasks]);
-
 
   // サンプル質問の配列
   const sampleQuestions = [
@@ -407,149 +399,138 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
 
   return (
     <>
-      <div
-        ref={chatBoxRef}
-        style={{
-          position: 'absolute',
-          left: `${position.x + 200}px`,
-          top: `${position.y + 150}px`,
-        }}
-        className="w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
-      >
+      <Draggable handle=".handle" defaultPosition={{x: 500, y: 150}}>
         <div
-          className="flex justify-between items-center p-3 bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] cursor-move"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            onMouseDown(e);
-          }}
+          ref={chatBoxRef}
+          className="absolute w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
         >
-          <h3 className="text-sm font-semibold flex items-center">
-            <span className="w-2 h-2 bg-[#0e639c] rounded-full mr-2"></span>
-            {t('AIチャット')}
-          </h3>
-          <div className="flex items-center">
-            <Button
-              onClick={() => setShowTaskManager(!showTaskManager)}
-              className="mr-2 text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200"
-            >
-              <span className="text-xs">タスク</span>
-            </Button>
-            <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200">
-              <X className="w-4 h-4" />
-            </Button>
+          <div
+            className="flex justify-between items-center p-3 bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] handle"
+          >
+            <h3 className="text-sm font-semibold flex items-center">
+              <span className="w-2 h-2 bg-[#0e639c] rounded-full mr-2"></span>
+              {t('AIチャット')}
+            </h3>
+            <div className="flex items-center">
+              <Button
+                onClick={() => setShowTaskManager(!showTaskManager)}
+                className="mr-2 text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200"
+              >
+                <span className="text-xs">タスク</span>
+              </Button>
+              <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200">
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-        <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[#4c4c4c] scrollbar-track-[#2d2d2d]">
-          {messages.map((message, index) => (
-            <div
-              key={message.id}
-              className={`p-3 rounded-lg text-sm ${
-                message.type === 'user'
-                  ? 'bg-gradient-to-r from-[#264f78] to-[#1e3a5f] text-white ml-auto max-w-[75%]'
-                  : message.type === 'ai'
-                  ? 'bg-gradient-to-r from-[#3c3c3c] to-[#4c4c4c] text-[#d4d4d4] mr-auto max-w-[75%]'
-                  : 'bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] text-center w-full'
-              }`}
-            >
-              {message.type === 'ai' && message.filePath && (
-                <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#4c4c4c]">
-                  <span className="font-bold text-xs truncate flex-grow mr-2">
-                    {message.filePath.length > 30
-                      ? `...${message.filePath.slice(-30)}`
-                      : message.filePath}
-                  </span>
-                  <div className="flex items-center">
-                    {message.status === 'pending' ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-[#3b9cff]" />
-                    ) : message.status === 'completed' ? (
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                    ) : (
-                      <StopCircle className="w-4 h-4 text-red-500" />
-                    )}
-                    <Button
-                      onClick={() => toggleExpand(index)}
-                      className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
-                    >
-                      {message.isExpanded ? (
-                        <ChevronUp className="w-3 h-3 text-[#3b9cff]" />
+          <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[#4c4c4c] scrollbar-track-[#2d2d2d]">
+            {messages.map((message, index) => (
+              <div
+                key={message.id}
+                className={`p-3 rounded-lg text-sm ${
+                  message.type === 'user'
+                    ? 'bg-gradient-to-r from-[#264f78] to-[#1e3a5f] text-white ml-auto max-w-[75%]'
+                    : message.type === 'ai'
+                    ? 'bg-gradient-to-r from-[#3c3c3c] to-[#4c4c4c] text-[#d4d4d4] mr-auto max-w-[75%]'
+                    : 'bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] text-center w-full'
+                }`}
+              >
+                {message.type === 'ai' && message.filePath && (
+                  <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#4c4c4c]">
+                    <span className="font-bold text-xs truncate flex-grow mr-2">
+                      {message.filePath.length > 30
+                        ? `...${message.filePath.slice(-30)}`
+                        : message.filePath}
+                    </span>
+                    <div className="flex items-center">
+                      {message.status === 'pending' ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#3b9cff]" />
+                      ) : message.status === 'completed' ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
                       ) : (
-                        <ChevronDown className="w-3 h-3 text-[#3b9cff]" />
+                        <StopCircle className="w-4 h-4 text-red-500" />
                       )}
-                    </Button>
-                    <Button
-                      onClick={() => copyMessageContent(message.content)}
-                      className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
-                    >
-                      <Copy className="w-3 h-3 text-[#3b9cff]" />
-                    </Button>
+                      <Button
+                        onClick={() => toggleExpand(index)}
+                        className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
+                      >
+                        {message.isExpanded ? (
+                          <ChevronUp className="w-3 h-3 text-[#3b9cff]" />
+                        ) : (
+                          <ChevronDown className="w-3 h-3 text-[#3b9cff]" />
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => copyMessageContent(message.content)}
+                        className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
+                      >
+                        <Copy className="w-3 h-3 text-[#3b9cff]" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-              {(message.type !== 'ai' || message.isExpanded) && (
-                <div className={`mt-2 ${message.isExpanded ? 'animate-fadeIn' : ''} overflow-hidden`}>
-                  <div className="break-words">
-                    {message.type === 'ai' ? renderMarkdown(message.content) : message.content}
+                )}
+                {(message.type !== 'ai' || message.isExpanded) && (
+                  <div className={`mt-2 ${message.isExpanded ? 'animate-fadeIn' : ''} overflow-hidden`}>
+                    <div className="break-words">
+                      {message.type === 'ai' ? renderMarkdown(message.content) : message.content}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
-          {pendingRequests.length > 0 && (
-            <div className="text-center">
-              <span className="animate-pulse text-xs bg-[#3c3c3c] px-3 py-1 rounded-full">{t('AIが考え中...')}</span>
-            </div>
-          )}
-        </div>
-        <div className="p-2 border-t border-[#3c3c3c] bg-[#2d2d2d] flex flex-wrap justify-center">
-          {sampleQuestions.map((question, index) => (
-            <button
-              key={index}
-              onClick={() => insertSampleQuestion(question)}
-              className="m-1 px-2 py-1 text-xs bg-[#3c3c3c] text-[#d4d4d4] rounded hover:bg-[#4c4c4c] transition-colors duration-200"
-            >
-              {question}
-            </button>
-          ))}
-        </div>
-        <form onSubmit={(e) => handleSubmit(e, false)} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={t('メッセージを入力...')}
-            className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e639c] transition-all duration-200 mr-2"
-          />
-          <div className="flex">
-            <Button
-              onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e, false)}
-              className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-4 py-2 hover:bg-[#4c4c4c] transition-all duration-200 mr-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-            </Button>
-            <Button
-              onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e, true)}
-              className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-4 py-2 hover:bg-[#4c4c4c] transition-all duration-200"
-            >
-              <Wrench className="w-4 h-4" />
-            </Button>
+                )}
+              </div>
+            ))}
+            {pendingRequests.length > 0 && (
+              <div className="text-center">
+                <span className="animate-pulse text-xs bg-[#3c3c3c] px-3 py-1 rounded-full">{t('AIが考え中...')}</span>
+              </div>
+            )}
           </div>
-        </form>
-      </div>
-      {showTaskManager && (
-        <div
-          style={{
-            position: 'absolute',
-            left: `${position.x + 200 + 400}px`,
-            top: `${position.y + 150}px`,
-          }}
-        >
-          <TaskManager 
-            tasks={tasks} 
-            onClose={() => setShowTaskManager(false)} 
-            onStopTask={stopTask}
-            onRestartTask={restartTask}
-          />
+          <div className="p-2 border-t border-[#3c3c3c] bg-[#2d2d2d] flex flex-wrap justify-center">
+            {sampleQuestions.map((question, index) => (
+              <button
+                key={index}
+                onClick={() => insertSampleQuestion(question)}
+                className="m-1 px-2 py-1 text-xs bg-[#3c3c3c] text-[#d4d4d4] rounded hover:bg-[#4c4c4c] transition-colors duration-200"
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+          <form onSubmit={(e) => handleSubmit(e, false)} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={t('メッセージを入力...')}
+              className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e639c] transition-all duration-200 mr-2"
+            />
+            <div className="flex">
+              <Button
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e, false)}
+                className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-4 py-2 hover:bg-[#4c4c4c] transition-all duration-200 mr-2"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e, true)}
+                className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-4 py-2 hover:bg-[#4c4c4c] transition-all duration-200"
+              >
+                <Wrench className="w-4 h-4" />
+              </Button>
+            </div>
+          </form>
         </div>
+      </Draggable>
+      {showTaskManager && (
+        <Draggable defaultPosition={{x: 900, y: 150}}>
+          <div>
+            <TaskManager 
+              tasks={tasks} 
+              onClose={() => setShowTaskManager(false)} 
+              onStopTask={stopTask}
+              onRestartTask={restartTask}
+            />
+          </div>
+        </Draggable>
       )}
     </>
   );
