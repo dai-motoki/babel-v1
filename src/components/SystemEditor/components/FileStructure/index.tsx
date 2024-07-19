@@ -487,7 +487,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between p-3">
+      <div className="flex items-center justify-end p-3">
         {/* <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('プロジェクト構造')}</h3> */}
         <div className="flex space-x-2">
           <SearchBar onSearch={handleSearch} />

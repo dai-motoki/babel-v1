@@ -9,7 +9,7 @@ const SearchBar = ({ onSearch }) => {
     <input
       type="text"
       onChange={(e) => onSearch(e.target.value)}
-      placeholder={t('Search file name')}
+      placeholder={t('ファイル検索')}
       className="px-3 py-1 text-sm rounded-md bg-[#2a2a2a] text-[#d4d4d4] border border-[#3c3c3c] focus:outline-none focus:border-[#6c6c6c]"
     />
   );
