@@ -15,6 +15,7 @@ import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
 import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus, Box } from 'lucide-react';
 import AIChat from './AIChat';
+import Draggable from 'react-draggable';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();
@@ -421,66 +422,68 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         </div>
       </div>
 
-      <div className="absolute bottom-1/4 left-0 p-2 z-10 max-h-[50vh] overflow-y-auto">
-        <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
-          <div className="flex border-b border-gray-600">
-            {highlightedNodeGroups.map((group) => (
-              <button
-                key={group.id}
-                className={`px-3 py-2 ${selectedGroupId === group.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-[#d4d4d4]'}`}
-                onClick={() => setSelectedGroupId(group.id)}
-              >
-                <Network className="w-4 h-4" />
-              </button>
-            ))}
-            <button
-              className="px-3 py-2 text-[#d4d4d4]"
-              onClick={addNewHighlightGroup}
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-          {highlightedNodeGroups.map((group) => (
-            <div key={group.id} className={`mt-2 ${selectedGroupId === group.id ? '' : 'hidden'}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={group.nodes.every(node => node.isSelected)}
-                    onChange={(e) => toggleGroupHighlight(group.id, e.target.checked)}
-                    className="mr-2"
-                  />
-                  <input
-                    type="text"
-                    value={group.name}
-                    onChange={(e) => editGroupName(group.id, e.target.value)}
-                    className="bg-transparent text-[#d4d4d4] text-sm border-b border-gray-600 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
+      <Draggable bounds="parent">
+        <div className="absolute bottom-1/4 left-0 p-2 z-10 cursor-move">
+          <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs max-h-[50vh] overflow-y-auto">
+            <div className="flex border-b border-gray-600">
+              {highlightedNodeGroups.map((group: any) => (
                 <button
-                  onClick={() => removeHighlightGroup(group.id)}
-                  className="text-red-500 hover:text-red-700"
+                  key={group.id}
+                  className={`px-3 py-2 ${selectedGroupId === group.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-[#d4d4d4]'}`}
+                  onClick={() => setSelectedGroupId(group.id)}
                 >
-                  <Trash className="w-4 h-4" />
+                  <Network className="w-4 h-4" />
                 </button>
-              </div>
-              <ul className="text-[#d4d4d4] text-sm max-h-40 overflow-y-auto">
-                {group.nodes.map((node) => (
-                  <li key={node.id} className="flex items-center">
+              ))}
+              <button
+                className="px-3 py-2 text-[#d4d4d4]"
+                onClick={addNewHighlightGroup}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            {highlightedNodeGroups.map((group: any) => (
+              <div key={group.id} className={`mt-2 ${selectedGroupId === group.id ? '' : 'hidden'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
                     <input
                       type="checkbox"
-                      checked={node.isSelected}
-                      onChange={() => highlightNode(node, group.id)}
+                      checked={group.nodes.every((node: any) => node.isSelected)}
+                      onChange={(e) => toggleGroupHighlight(group.id, e.target.checked)}
                       className="mr-2"
                     />
-                    <span>{node.id || node.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                    <input
+                      type="text"
+                      value={group.name}
+                      onChange={(e) => editGroupName(group.id, e.target.value)}
+                      className="bg-transparent text-[#d4d4d4] text-sm border-b border-gray-600 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <button
+                    onClick={() => removeHighlightGroup(group.id)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash className="w-4 h-4" />
+                  </button>
+                </div>
+                <ul className="text-[#d4d4d4] text-sm max-h-40 overflow-y-auto">
+                  {group.nodes.map((node: any) => (
+                    <li key={node.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={node.isSelected}
+                        onChange={() => highlightNode(node, group.id)}
+                        className="mr-2"
+                      />
+                      <span>{node.id || node.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </Draggable>
 
       <div className="flex items-center justify-between p-3">
         <h3 className="text-lg font-medium text-[#d4d4d4] font-sans">{t('プロジェクト構造')}</h3>
