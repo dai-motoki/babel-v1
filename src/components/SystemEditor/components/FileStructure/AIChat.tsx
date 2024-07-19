@@ -399,11 +399,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   }, [tasks, setMessages, setTasks, setPendingRequests, t]);
 
   return (
-    <>
-      <Draggable>
+    <div className="fixed bottom-4 right-4 flex">
+      <Draggable bounds="parent">
         <div
           ref={chatBoxRef}
-          className="absolute w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
+          className="w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
         >
           <div
             className="flex justify-between items-center p-3 bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] cursor-move"
@@ -479,7 +479,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                 )}
               </div>
             ))}
-            {pendingRequests.length > 0 && (
+            {Object.keys(pendingRequests).length > 0 && (
               <div className="text-center">
                 <span className="animate-pulse text-xs bg-[#3c3c3c] px-3 py-1 rounded-full">{t('AIが考え中...')}</span>
               </div>
@@ -522,18 +522,16 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         </div>
       </Draggable>
       {showTaskManager && (
-        <Draggable>
-          <div className="absolute">
-            <TaskManager 
-              tasks={tasks} 
-              onClose={() => setShowTaskManager(false)} 
-              onStopTask={stopTask}
-              onRestartTask={restartTask}
-            />
-          </div>
-        </Draggable>
+        <div className="ml-4">
+          <TaskManager 
+            tasks={tasks} 
+            onClose={() => setShowTaskManager(false)} 
+            onStopTask={stopTask}
+            onRestartTask={restartTask}
+          />
+        </div>
       )}
-    </>
+    </div>
   );
 };
 
