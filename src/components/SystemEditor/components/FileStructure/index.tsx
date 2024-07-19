@@ -1,21 +1,31 @@
+
 import React, { useRef, useCallback, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import ForceGraph2D from 'react-force-graph-2d';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import SpriteText from 'three-spritetext';
-import MockEditor from './MockEditor';
-import SearchBar from './SearchBar';
+import Draggable from 'react-draggable';
+import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus, Box } from 'lucide-react';
+
+import HighlightedGroups from './HighlightedGroups';
 import RecentChanges from './RecentChanges';
-import Button from '../common/Button';
+import ControlPanel from './ControlPanel';
+import NodeContextMenu from './ContextMenus/NodeContextMenu';
+import SelectionActionMenu from './ContextMenus/SelectionActionMenu';
+import GraphOverlay from './GraphOverlay';
+import FloatingButtons from './FloatingButtons';
+import AIChat from './AIChat';
+import TaskManager from './TaskManager';
+import ForceGraph from './ForceGraph';
+
+import MockEditor from '../MockEditor';
+import Button from '../../common/Button';
 import useFileChanges from '@/hooks/useFileChanges';
 import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
-import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus, Box } from 'lucide-react';
-import AIChat from './AIChat';
-import Draggable from 'react-draggable';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();
@@ -46,8 +56,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, name: 'グループ1', nodes: [] }];
   });
 
-  
-
   const addNewHighlightGroup = useCallback(() => {
     setHighlightedNodeGroups(prevGroups => {
       const newGroupId = Math.max(...prevGroups.map(g => g.id), 0) + 1;
@@ -55,7 +63,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     });
   }, []);
 
-  const editGroupName = useCallback((groupId: number, newName: string) => {
+  const editGroupName = useCallback((groupId, newName) => {
     setHighlightedNodeGroups(prevGroups =>
       prevGroups.map(group =>
         group.id === groupId ? { ...group, name: newName } : group
@@ -377,8 +385,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     enableZoomInteraction: !isSelectionMode,
   }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode]);
 
-
-
   const forceGraph3DConfig = {
     ...forceGraphConfig,
     nodeThreeObject: (node) => {
@@ -416,94 +422,30 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   return (
     <div className="h-full border border-[#3c3c3c] rounded-md overflow-hidden bg-[#1e1e1e] flex flex-col relative">
+      <HighlightedGroups
+        highlightedNodeGroups={highlightedNodeGroups}
+        selectedGroupId={selectedGroupId}
+        setSelectedGroupId={setSelectedGroupId}
+        addNewHighlightGroup={addNewHighlightGroup}
+        editGroupName={editGroupName}
+        toggleGroupHighlight={toggleGroupHighlight}
+        removeHighlightGroup={removeHighlightGroup}
+        highlightNode={highlightNode}
+      />
 
+      <RecentChanges changes={changes} />
 
-      <Draggable bounds="parent">
-        <div className="absolute top-24 left-4 p-2 z-10 cursor-move">
-          <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs max-h-[50vh] overflow-y-auto">
-            <div className="flex border-b border-gray-600">
-              {highlightedNodeGroups.map((group: any) => (
-                <button
-                  key={group.id}
-                  className={`px-3 py-2 ${selectedGroupId === group.id ? 'text-blue-500 border-b-2 border-blue-500' : 'text-[#d4d4d4]'}`}
-                  onClick={() => setSelectedGroupId(group.id)}
-                >
-                  <Network className="w-4 h-4" />
-                </button>
-              ))}
-              <button
-                className="px-3 py-2 text-[#d4d4d4]"
-                onClick={addNewHighlightGroup}
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            {highlightedNodeGroups.map((group: any) => (
-              <div key={group.id} className={`mt-2 ${selectedGroupId === group.id ? '' : 'hidden'}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={group.nodes.every((node: any) => node.isSelected)}
-                      onChange={(e) => toggleGroupHighlight(group.id, e.target.checked)}
-                      className="mr-2"
-                    />
-                    <input
-                      type="text"
-                      value={group.name}
-                      onChange={(e) => editGroupName(group.id, e.target.value)}
-                      className="bg-transparent text-[#d4d4d4] text-sm border-b border-gray-600 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <button
-                    onClick={() => removeHighlightGroup(group.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash className="w-4 h-4" />
-                  </button>
-                </div>
-                <ul className="text-[#d4d4d4] text-sm max-h-40 overflow-y-auto">
-                  {group.nodes.map((node: any) => (
-                    <li key={node.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={node.isSelected}
-                        onChange={() => highlightNode(node, group.id)}
-                        className="mr-2"
-                      />
-                      <span>{node.id || node.name}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Draggable>
+      <ControlPanel
+        onSearch={handleSearch}
+        showAll={showAll}
+        showFileNames={showFileNames}
+        setShowFileNames={setShowFileNames}
+        isSelectionMode={isSelectionMode}
+        toggleSelectionMode={toggleSelectionMode}
+        is3D={is3D}
+        toggle2D3D={toggle2D3D}
+      />
 
-      <div className="absolute bottom-4 left-4 p-2 z-10">
-        <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs">
-          <RecentChanges changes={changes} />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-end p-3">
-        <div className="flex space-x-2">
-          <SearchBar onSearch={handleSearch} />
-          <Button onClick={showAll}>{t('全て表示')}</Button>
-          <Button onClick={() => setShowFileNames(!showFileNames)}>
-            {showFileNames ? t('ファイル名を非表示') : t('ファイル名を表示')}
-          </Button>
-          <Button onClick={toggleSelectionMode} className={isSelectionMode ? 'bg-blue-500' : ''}>
-            <MousePointer className="w-4 h-4 mr-2" />
-            {isSelectionMode ? t('選択モード: ON') : t('選択モード: OFF')}
-          </Button>
-          <Button onClick={toggle2D3D} aria-label={is3D ? "2Dビューに切り替え" : "3Dビューに切り替え"}>
-            <Box className="w-4 h-4 mr-2" />
-            {is3D ? "2D" : "3D"}
-          </Button>
-        </div>
-      </div>
       <div className="flex-grow flex">
         <div className="w-full flex flex-col">
           {selectedNodes.map((node) => (
@@ -515,124 +457,60 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
             />
           ))}
           <div className="flex-grow relative">
-            {is3D ? (
-      <ForceGraph3D
-      ref={fgRef}
-      {...forceGraph3DConfig}
-                {...memoizedForceGraphData}
-              />
-            ) : (
-              <ForceGraph2D
-                ref={fgRef}
-                {...forceGraphConfig}
-              />
-            )}
+            <ForceGraph
+              is3D={is3D}
+              fgRef={fgRef}
+              forceGraphConfig={forceGraphConfig}
+              forceGraph3DConfig={forceGraph3DConfig}
+              memoizedForceGraphData={memoizedForceGraphData}
+            />
 
-            {isSelectionMode && (
-              <>
-                <div
-                  ref={overlayRef}
-                  className="absolute inset-0 bg-black bg-opacity-30 cursor-crosshair"
-                  onMouseDown={handleOverlayMouseDown}
-                  onMouseMove={handleOverlayMouseMove}
-                  onMouseUp={handleOverlayMouseUp}
-                />
-                {selectionPath.length > 0 && (
-                  <div className="absolute inset-0 pointer-events-none">
-                    <svg width="100%" height="100%">
-                      <filter id="glow">
-                        <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
-                        <feMerge>
-                          <feMergeNode in="coloredBlur"/>
-                          <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                      </filter>
-                      <path
-                        d={`M ${selectionPath.map(p => `${p.x},${p.y}`).join(' L ')}`}
-                        fill="none"
-                        stroke="url(#goldenGradient)"
-                        strokeWidth="4"
-                        filter="url(#glow)"
-                      />
-                      <linearGradient id="goldenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#FFE4B5" stopOpacity="0.3"/>
-                        <stop offset="50%" stopColor="#FFDAB9" stopOpacity="0.5"/>
-                        <stop offset="100%" stopColor="#FFE4B5" stopOpacity="0.3"/>
-                      </linearGradient>
-                    </svg>
-                  </div>
-                )}
-              </>
-            )}
+            <GraphOverlay
+              isSelectionMode={isSelectionMode}
+              overlayRef={overlayRef}
+              handleOverlayMouseDown={handleOverlayMouseDown}
+              handleOverlayMouseMove={handleOverlayMouseMove}
+              handleOverlayMouseUp={handleOverlayMouseUp}
+              selectionPath={selectionPath}
+            />
 
-            {clickedNode && !isSelectionMode && (
-              <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ left: menuPosition.x, top: menuPosition.y, transform: 'translate(-50%, -100%)' }}>
-                <Button onClick={() => { highlightNode(clickedNode, highlightedNodeGroups[highlightedNodeGroups.length - 1].id); setClickedNode(null); }} className="text-xs flex items-center">
-                  <Highlighter className="w-3 h-3 mr-2 text-yellow-200 opacity-50" />
-                  <span>{t('ハイライト')}</span>
-                </Button>
-                <Button onClick={() => { getNodeSurroundings(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
-                  <Network className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
-                  <span>{t('周辺取得')}</span>
-                </Button>
-                <Button onClick={() => { showEditor(clickedNode); setClickedNode(null); }} className="text-xs flex items-center">
-                  <Edit className="w-3 h-3 mr-2 text-green-200 opacity-50" />
-                  <span>{t('エディタ表示')}</span>
-                </Button>
-                <Button onClick={() => { console.log('会話ボタンがクリックされました'); setClickedNode(null); }} className="text-xs flex items-center">
-                  <MessageCircle className="w-3 h-3 mr-2 text-red-200 opacity-50" />
-                  <span>{t('会話する')}</span>
-                </Button>
-                <Button onClick={() => { console.log('コピーボタンがクリックされました'); setClickedNode(null); }} className="text-xs flex items-center">
-                  <Copy className="w-3 h-3 mr-2 text-purple-200 opacity-50" />
-                  <span>{t('コピー')}</span>
-                </Button>
-                <Button onClick={() => { console.log('削除ボタンがクリックされました'); setClickedNode(null); }} className="text-xs flex items-center">
-                  <Trash className="w-3 h-3 mr-2 text-red-500 opacity-50" />
-                  <span>{t('削除')}</span>
-                </Button>
-              </div>
-            )}
-            {selectedNodesInPath.length > 0 && (
-              <div className="absolute bg-[#2a2a2a] rounded shadow-lg p-2 flex flex-col space-y-2" style={{ right: 10, top: 10 }}>
-                <Button onClick={() => handleSelectionAction('highlight')} className="text-xs flex items-center">
-                  <Highlighter className="w-3 h-3 mr-2 text-yellow-200 opacity-50" />
-                  <span>{t('選択をハイライト')}</span>
-                </Button>
-                <Button onClick={() => handleSelectionAction('surroundings')} className="text-xs flex items-center">
-                  <Network className="w-3 h-3 mr-2 text-blue-200 opacity-50" />
-                  <span>{t('選択の周辺を表示')}</span>
-                </Button>
-                <Button onClick={() => handleSelectionAction('showEditor')} className="text-xs flex items-center">
-                  <Edit className="w-3 h-3 mr-2 text-green-200 opacity-50" />
-                  <span>{t('選択をエディタで開く')}</span>
-                </Button>
-              </div>
-            )}
+            <NodeContextMenu
+              clickedNode={clickedNode}
+              menuPosition={menuPosition}
+              isSelectionMode={isSelectionMode}
+              highlightNode={highlightNode}
+              getNodeSurroundings={getNodeSurroundings}
+              showEditor={showEditor}
+              highlightedNodeGroups={highlightedNodeGroups}
+              setClickedNode={setClickedNode}
+            />
+
+            <SelectionActionMenu
+              selectedNodesInPath={selectedNodesInPath}
+              handleSelectionAction={handleSelectionAction}
+            />
           </div>
         </div>
       </div>
-      <div className="fixed bottom-4 right-4 flex flex-col space-y-2 z-50">
-        <Button
-          onClick={() => setShowAIChat(!showAIChat)}
-          className="bg-[#3c3c3c] text-[#d4d4d4] rounded-full p-2 hover:bg-[#4c4c4c] transition-all duration-200"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </Button>
-        <Button
-          onClick={() => setShowTaskManager(!showTaskManager)}
-          className="bg-[#3c3c3c] text-[#d4d4d4] rounded-full p-2 hover:bg-[#4c4c4c] transition-all duration-200"
-        >
-          <ListTodo className="w-6 h-6" />
-        </Button>
-      </div>
-      {showAIChat && (
-        <AIChat
-        nodes={highlightedNodeGroups.flatMap(group => group.nodes.filter(node => node.isSelected))}
-        onClose={() => setShowAIChat(false)}
-        showTaskManager={showTaskManager}
+
+      <FloatingButtons
+        setShowAIChat={setShowAIChat}
         setShowTaskManager={setShowTaskManager}
       />
+
+      {showAIChat && (
+        <AIChat
+          nodes={highlightedNodeGroups.flatMap(group => group.nodes.filter(node => node.isSelected))}
+          onClose={() => setShowAIChat(false)}
+          showTaskManager={showTaskManager}
+          setShowTaskManager={setShowTaskManager}
+        />
+      )}
+
+      {showTaskManager && (
+        <TaskManager
+          onClose={() => setShowTaskManager(false)}
+        />
       )}
     </div>
   );
