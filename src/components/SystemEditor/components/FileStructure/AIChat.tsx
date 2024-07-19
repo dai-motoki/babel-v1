@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Draggable from 'react-draggable';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTranslation } from 'react-i18next';
 import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Wrench, StopCircle } from 'lucide-react';
@@ -7,6 +6,7 @@ import Button from '../common/Button';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import TaskManager from './TaskManager';
+import Draggable from 'react-draggable';
 
 // AIMessageインターフェースの定義
 interface AIMessage {
@@ -46,6 +46,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const [pendingRequests, setPendingRequests] = useState<{ [key: string]: AbortController }>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ x: 20, y: 20 });
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showTaskManager, setShowTaskManager] = useState(true);
 
@@ -399,13 +400,13 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
 
   return (
     <>
-      <Draggable handle=".handle" defaultPosition={{x: 500, y: 150}}>
+      <Draggable>
         <div
           ref={chatBoxRef}
           className="absolute w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
         >
           <div
-            className="flex justify-between items-center p-3 bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] handle"
+            className="flex justify-between items-center p-3 bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] cursor-move"
           >
             <h3 className="text-sm font-semibold flex items-center">
               <span className="w-2 h-2 bg-[#0e639c] rounded-full mr-2"></span>
@@ -521,8 +522,8 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         </div>
       </Draggable>
       {showTaskManager && (
-        <Draggable defaultPosition={{x: 900, y: 150}}>
-          <div>
+        <Draggable>
+          <div className="absolute">
             <TaskManager 
               tasks={tasks} 
               onClose={() => setShowTaskManager(false)} 
