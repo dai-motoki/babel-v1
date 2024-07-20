@@ -46,12 +46,13 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
   const [pendingRequests, setPendingRequests] = useState<{ [key: string]: AbortController }>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatBoxRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 20, y: 20 });
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showTaskManager, setShowTaskManager] = useState(true);
 
+
   const [storedMessages, setStoredMessages] = useLocalStorage<AIMessage[]>('aiChatMessages', []);
   const [storedTasks, setStoredTasks] = useLocalStorage<Task[]>('aiChatTasks', []);
+
 
   useEffect(() => {
     setMessages(storedMessages);

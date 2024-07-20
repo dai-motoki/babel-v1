@@ -16,6 +16,7 @@ import { getNodeColor } from '@/utils/colors';
 import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus, Box } from 'lucide-react';
 import AIChat from './AIChat';
 import Draggable from 'react-draggable';
+import Draggable from 'react-draggable';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();
