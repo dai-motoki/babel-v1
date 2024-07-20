@@ -93,8 +93,6 @@ async def get_directory_structure(path_type: str):
     # 関数を呼び出して現在のディレクトリを表示
     print_current_directory()
 
-    logger.debug("aaaaaa")
-
     if path_type == "file_explorer":
         base_path = "../src/components/generated/"
     elif path_type == "requirements_definition":
@@ -102,7 +100,7 @@ async def get_directory_structure(path_type: str):
     elif path_type == "babel":
         base_paths = ["../../src", "../../Dockerfile", "../../docker-compose.yml", "../../README.md"]
     else:
-        base_path = "../../generated/{}".format(path_type)
+        base_path = "../../../generated/{}".format(path_type)
 
     logger.info(f"base_pathを設定しました: {base_path if path_type != 'babel' else base_paths}")
 

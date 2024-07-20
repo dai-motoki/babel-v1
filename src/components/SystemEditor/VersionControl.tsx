@@ -175,7 +175,7 @@ export function VersionControl() {
     }
 
     // APIにPOSTリクエストを送信
-    const response = await fetch(`http://localhost:8000/create_new_system?name=${encodeURIComponent(システム名)}`, {
+    const response = await fetch(`http://localhost:8000/api/files/create_new_system?name=${encodeURIComponent(システム名)}`, {
       method: 'POST',
       headers: {
         'accept': 'application/json'
