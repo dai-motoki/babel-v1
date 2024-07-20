@@ -6,7 +6,7 @@ import { useVersionControlData } from '../../hooks/useVersionControlData';
 import { withoutAuthor } from '../../utils/gitGraphTemplate';
 import { getDummyData } from '../../constants/dummyData';
 // import { FileStructure } from '.';
-import { FileStructure } from './components/FileStructure';
+import { FileStructure } from '@/components/GraphicalEditor';
 import { useSearchParams } from 'next/navigation';
 
 
