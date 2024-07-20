@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useTranslation } from 'next-i18next';
-import Sidebar from '@/components/Sidebar';
+import Sidebar from '@/components/common/Sidebar';
 import { Dna, Cloud, Package, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

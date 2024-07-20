@@ -18,7 +18,7 @@ import AIChat from './AIChat';
 import TaskManager from './TaskManager';
 import ForceGraph from './ForceGraph';
 
-import MockEditor from './MockEditor';
+import MockEditor from '../IDE/MockEditor';
 import Button from '@/components/common/Button';
 import useFileChanges from '@/hooks/useFileChanges';
 import useForceGraph from '@/hooks/useForceGraph';

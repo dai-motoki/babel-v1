@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import Tower from './components/Icons/Tower';
 import SaaSCard from './components/SaaSCard';
-import SearchBar from '@/components/SearchBar';
+import SearchBar from '@/components/common/SearchBar';
 import useSaaSData from './hooks/useSaaSData';
 import VersionControl from '../SystemEditor/VersionControl';
 import { useRouter } from 'next/navigation';

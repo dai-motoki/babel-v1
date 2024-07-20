@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import Sidebar from '@/components/Sidebar'
+import Sidebar from '@/components/common/Sidebar'
 import DynamicComponent from '@/components/DynamicComponent'
 
 export default function EditorPage() {

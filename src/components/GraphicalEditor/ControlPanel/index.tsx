@@ -3,7 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { MousePointer, Box } from 'lucide-react';
 import Button from '@/components/common/Button';
-import SearchBar from '@/components/SearchBar';
+import SearchBar from '@/components/common/SearchBar';
 
 interface ControlPanelProps {
   onSearch: (query: string) => void;

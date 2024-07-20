@@ -4,7 +4,7 @@ import ForceGraph2D from 'react-force-graph-2d';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import SpriteText from 'three-spritetext';
-import MockEditor from './MockEditor';
+import MockEditor from '../IDE/MockEditor';
 import SearchBar from './SearchBar';
 import RecentChanges from './RecentChanges';
 import Button from '@/components/common/Button';
