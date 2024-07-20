@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Highlighter, Network, Edit, MessageCircle, Copy, Trash } from 'lucide-react';
 import Button from '@/components/common/Button';
 
+
 interface NodeContextMenuProps {
   clickedNode: any;
   menuPosition: { x: number; y: number };
