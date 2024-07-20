@@ -8,6 +8,7 @@ import { getDummyData } from '../../constants/dummyData';
 // import { FileStructure } from '.';
 import { FileStructure } from '@/components/GraphicalEditor';
 import { useSearchParams } from 'next/navigation';
+import { CreateSystemDialog } from './CreateSystemDialog';
 
 
 
@@ -139,58 +140,45 @@ export function VersionControl() {
     setselectedSystem (選択されたディレクトリ.value);
   };
 
-  const 新規システム作成処理 = async () => {
-    console.log('新規システム作成処理');
-    setselectedSystem ('');
+  const 新規システム作成処理 = () => {
     setIsCreateSystemDialogOpen(true);
+  };
 
-    // システム名入力用のカードを表示
-    const システム名入力カード = document.createElement('div');
-    システム名入力カード.innerHTML = `
-      <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-        <h3>新しいシステムの作成</h3>
-        <p>システム名を入力してください（アルファベット推奨）:</p>
-        <input type="text" id="システム名入力" style="width: 100%; padding: 5px; margin-bottom: 10px;">
-        <button id="作成ボタン" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">作成</button>
-        <button id="キャンセルボタン" style="background-color: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: 10px;">キャンセル</button>
-      </div>
-    `;
-    document.body.appendChild(システム名入力カード);
-
-    const システム名 = await new Promise((resolve) => {
-      document.getElementById('作成ボタン').addEventListener('click', () => {
-        const 入力値 = document.getElementById('システム名入力').value;
-        document.body.removeChild(システム名入力カード);
-        resolve(入力値);
+  const handleCreateSystem = async (newSystemName: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/files/create_new_system?name=${encodeURIComponent(newSystemName)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newSystemName }),
       });
-      document.getElementById('キャンセルボタン').addEventListener('click', () => {
-        document.body.removeChild(システム名入力カード);
-        resolve(null);
-      });
-    });
 
-    if (!システム名) {
-      console.log('システム作成がキャンセルされました。');
-      return;
-    }
-
-    // APIにPOSTリクエストを送信
-    const response = await fetch(`http://localhost:8000/api/files/create_new_system?name=${encodeURIComponent(システム名)}`, {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json'
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const result = await response.json();
+      console.log('新しいシステムが作成されました:', result);
+
+      setDirectoryOptions(prevOptions => [
+        ...prevOptions,
+        {
+          value: result.name,
+          label: result.name,
+          path: result.path,
+          image: `https://picsum.photos/200/300?random=magic${result.name}`
+        }
+      ]);
+
+      setIsCreateSystemDialogOpen(false);
+      // 新しいシステムが作成された後に、指定されたURLでエディタを開く
+      window.open(`http://localhost:3001/development/editor?system=${encodeURIComponent(newSystemName)}`, '_blank');
+
+    } catch (error) {
+      console.error('システムの作成に失敗しました:', error);
+      alert(t('システムの作成に失敗しました。もう一度お試しください。'));
     }
-
-    // 新しいシステムが作成された後に、指定されたURLでエディタを開く処理を追加
-    window.open(`http://localhost:3001/development/editor?system=${encodeURIComponent(システム名)}`, '_blank');
-
-    const result = await response.json();
-    console.log('新しいシステムが作成されました:', result);
   };
 
   useEffect(() => {
@@ -221,39 +209,6 @@ export function VersionControl() {
   const filteredDirectoryOptions = directoryOptions.filter(option =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleCreateSystem = async (newSystemName) => {
-    try {
-      const response = await fetch('http://localhost:8000/api/create-system', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newSystemName }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('新しいシステムが作成されました:', result);
-
-      setDirectoryOptions(prevOptions => [
-        ...prevOptions,
-        {
-          value: result.name,
-          label: result.name,
-          path: result.path,
-          image: `https://picsum.photos/200/300?random=magic${result.name}`
-        }
-      ]);
-
-    } catch (error) {
-      console.error('システムの作成に失敗しました:', error);
-      alert(t('システムの作成に失敗しました。もう一度お試しください。'));
-    }
-  };
 
   const searchParams = useSearchParams();
 
@@ -357,6 +312,13 @@ export function VersionControl() {
             {t('新規システム作成')}
           </Button>
         </div>
+      )}
+      
+      {isCreateSystemDialogOpen && (
+        <CreateSystemDialog
+          onClose={() => setIsCreateSystemDialogOpen(false)}
+          onCreateSystem={handleCreateSystem}
+        />
       )}
     </div>
   );

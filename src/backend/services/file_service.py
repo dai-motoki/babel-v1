@@ -100,7 +100,10 @@ async def get_directory_structure(path_type: str):
     elif path_type == "babel":
         base_paths = ["../../src", "../../Dockerfile", "../../docker-compose.yml", "../../README.md"]
     else:
-        base_path = "../../../generated/{}".format(path_type)
+        # ホームディレクトリのbabel_generatedフォルダから取得するように変更
+        home_dir = os.path.expanduser("~")
+        base_path = os.path.join(home_dir, "babel_generated", path_type)
+        logger.debug(f"base_pathを設定しました: {base_path}")
 
     logger.info(f"base_pathを設定しました: {base_path if path_type != 'babel' else base_paths}")
 

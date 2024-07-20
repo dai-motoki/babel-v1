@@ -133,9 +133,11 @@ async def get_generated_dirs_route():
 async def create_new_system(name: str):
     logger.info(f"新しいシステムの作成リクエストを受信: {name}")
     
-    # ../components/generated/ 直下に新しいディレクトリを作成
-    new_dir_path = os.path.join("..", "..", "generated", name)
+    # ホームディレクトリにbabel_generatedディレクトリを作成
+    home_dir = os.path.expanduser("~")
+    new_dir_path = os.path.join(home_dir, "babel_generated", name)
     os.makedirs(new_dir_path, exist_ok=True)
+    logger.info(f"新しいシステムディレクトリを作成しました: {new_dir_path}")
     
     # 基本的なサブディレクトリを作成
     subdirs = ['exe_history', 'frontend', 'backend', 'middleware', 'docs', 'tests', 'resources', 'database', 'logs', 'locales', 'meta']
