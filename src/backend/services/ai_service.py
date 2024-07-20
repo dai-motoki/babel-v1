@@ -165,26 +165,12 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
     if os.path.isdir(full_path):
         # ディレクトリの場合、直下のツリー構造を取得
         tree_structure = get_directory_tree(full_path)
-        
-        # ディレクトリ構造と要望に基づいて返答を生成
-        prompt = f"""
-        以下のディレクトリ構造に対して、{feature_request} を実現する方法を提案してください。
-        
-        ディレクトリ構造:
-        {tree_structure}
-        
-        提案には以下の点を含めてください：
-        1. 新しいファイルやディレクトリの追加が必要な場合、その構造と目的
-        2. 既存のファイルに変更が必要な場合、どのファイルをどのように変更するか
-        3. 全体的なアプローチと、それがどのようにして要望を満たすか
-        """
-        
-        result = await generate_text_anthropic(prompt)
-        return {"result": result, "file_path": file_path, "is_directory": True}
-    
-    # ファイルの場合は既存の処理を続行
-    with open(full_path, 'r') as file:
-        content = file.read()
+        content = tree_structure
+    else:
+        # ファイルの場合は内容を読み込む
+        with open(full_path, 'r') as file:
+            content = file.read()
+
     python_process_prompt = f"""
     ファイルの書き込みはpythonファイルを作成します。
     - 1枚のファイルで書いてください。複数に分けてはいけません。
@@ -237,7 +223,7 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
         await version_control(file_path, "AI更新")
 
     logger.info(f"処理が完了しました: {file_path}")
-    return {"result": result, "file_path": file_path, "is_directory": False}
+    return {"result": result, "file_path": file_path, "is_directory": os.path.isdir(full_path)}
 
 def get_directory_tree(path, level=0):
     tree = ""
