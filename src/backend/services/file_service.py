@@ -42,7 +42,9 @@ async def load_file(filename: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 async def get_generated_dirs():
-    base_path = "../../generated"
+    # ホームディレクトリを取得
+    home_dir = os.path.expanduser("~")
+    base_path = os.path.join(home_dir, "babel_generated")
     logger.info(f"生成されたディレクトリの取得を開始します。ベースパス: {base_path}")
     try:
         logger.debug("ディレクトリ構造の作成を開始します。")
