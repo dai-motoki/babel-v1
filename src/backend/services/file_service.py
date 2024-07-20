@@ -7,6 +7,33 @@ import fnmatch
 
 logger = logging.getLogger(__name__)
 
+# ログレベルを DEBUG に設定
+logger.setLevel(logging.DEBUG)
+
+# コンソールハンドラを作成
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# ファイルハンドラを作成
+file_handler = logging.FileHandler('file_service.log')
+file_handler.setLevel(logging.DEBUG)
+
+# フォーマッタを作成
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
+
+# ハンドラをロガーに追加
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
+# 全てのログレベルでメッセージを出力するように設定
+logger.debug('デバッグメッセージ')
+logger.info('情報メッセージ')
+logger.warning('警告メッセージ')
+logger.error('エラーメッセージ')
+logger.critical('クリティカルメッセージ')
+
 async def save_file(file_data: dict):
     logger.info(f"ファイル保存リクエストを受信: {file_data['file_path']}")
     logger.debug(f"ファイル内容のサイズ: {len(file_data['content'])} バイト")
@@ -79,6 +106,11 @@ async def get_generated_dirs():
         logger.debug(f"エラーの詳細情報: {e.__class__.__name__}")
         raise HTTPException(status_code=500, detail="ディレクトリの取得に失敗しました")
 
+
+
+
+
+
 async def get_directory_structure(path_type: str):
     logger.info(f"ディレクトリ構造の取得を開始します。path_type: {path_type}")
 
@@ -110,8 +142,14 @@ async def get_directory_structure(path_type: str):
     logger.info(f"base_pathを設定しました: {base_path if path_type != 'babel' else base_paths}")
 
     try:
-        gitignore_patterns = read_gitignore("../../.gitignore")
-        logger.debug(f"gitignoreパターンを読み込みました: {gitignore_patterns}")
+        if path_type == "babel":
+            gitignore_patterns = read_gitignore("../../.gitignore")
+        else:
+            gitignore_path = os.path.join(base_path, ".gitignore")
+            logger.debug(f".gitignoreファイルのパスを設定しました: {gitignore_path}")
+            gitignore_patterns = read_gitignore(gitignore_path)
+            logger.info(f".gitignoreファイルを読み込みました: {gitignore_path}")
+            logger.debug(f"読み込んだgitignoreパターン: {gitignore_patterns}")
 
         if path_type == "babel":
             structure = []
@@ -125,21 +163,21 @@ async def get_directory_structure(path_type: str):
                             "type": "file",
                             "path": base_path,
                         })
-                        logger.debug(f"ファイルを追加しました: {os.path.basename(base_path)}")
+                        # logger.debug(f"ファイルを追加しました: {os.path.basename(base_path)}")
                 else:
                     structure.extend(create_structure(base_path, base_path, gitignore_patterns))
-                    logger.debug(f"ディレクトリ構造を追加しました: {base_path}")
+                    # logger.debug(f"ディレクトリ構造を追加しました: {base_path}")
         else:
             structure = create_structure(base_path, base_path, gitignore_patterns)
-            logger.debug(f"ディレクトリ構造を作成しました: {base_path}")
+            # logger.debug(f"ディレクトリ構造を作成しました: {base_path}")
 
-        logger.info(f"{path_type}のディレクトリ構造を正常に作成しました")
+        # logger.info(f"{path_type}のディレクトリ構造を正常に作成しました")
         return {"structure": structure}
     except Exception as e:
-        logger.error(f"{path_type}のディレクトリ構造の取得中にエラーが発生しました: {str(e)}", exc_info=True)
+        # logger.error(f"{path_type}のディレクトリ構造の取得中にエラーが発生しました: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="ディレクトリ構造の取得に失敗しました")
 
-logger.info("アプリケーションが起動しました")
+# logger.info("アプリケーションが起動しました")
 
 def create_structure(path, base_path, gitignore_patterns):
     structure = []
@@ -165,15 +203,36 @@ def create_structure(path, base_path, gitignore_patterns):
     return structure
 
 def read_gitignore(path):
+    # .gitignoreファイルを読み込む関数
     if os.path.exists(path):
+        # ファイルが存在する場合
         with open(path, 'r') as f:
-            return [line.strip() for line in f if line.strip() and not line.startswith('#')]
+            # ファイルを開いて読み込む
+            return [
+                line.strip()  # 各行の前後の空白を削除
+                for line in f
+                if line.strip() and not line.startswith('#')  # 空行とコメント行を除外
+            ]
+    # ファイルが存在しない場合は空のリストを返す
     return []
 
 def should_ignore(item, gitignore_patterns):
     if gitignore_patterns is None:
         return False
-    return any(fnmatch.fnmatch(item, pattern) for pattern in gitignore_patterns)
+    
+    # node_modulesディレクトリと.gitディレクトリを無視
+    if 'node_modules' in item.split(os.path.sep) or '.git' in item.split(os.path.sep):
+        return True
+    
+    # その他の .gitignore パターンをチェック
+    for pattern in gitignore_patterns:
+        if fnmatch.fnmatch(item, pattern):
+            return True
+        # ディレクトリパターンの場合、すべてのサブディレクトリを無視
+        if pattern.endswith('/') and item.startswith(pattern):
+            return True
+    
+    return False
 
 def read_file_content(file_path):
     try:
@@ -182,13 +241,11 @@ def read_file_content(file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             return file.read()
     except UnicodeDecodeError:
-        logger.warning(f"ファイルの読み込みをスキップしました（エンコーディングエラー）: {file_path}")
+        # logger.warning(f"ファイルの読み込みをスキップしました（エンコーディングエラー）: {file_path}")
         return None
     except Exception as e:
-        logger.error(f"ファイル読み込み中にエラーが発生しました: {file_path}, エラー: {str(e)}")
+        # logger.error(f"ファイル読み込み中にエラーが発生しました: {file_path}, エラー: {str(e)}")
         return None
-
-
 
 # ファイル操作サービス
 import os
@@ -227,7 +284,7 @@ class FileService:
         if line_number < 1 or line_number > len(content):
             raise ValueError("Invalid line number")
         content[line_number - 1] = new_content
-        write_file(file_path, " ".join(content))
+        write_file(file_path, "\n".join(content))
 
     async def append_to_file(self, filename: str, content: str):
         file_path = os.path.join(self.upload_dir, filename)
@@ -238,4 +295,3 @@ class FileService:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File {filename} not found")
         os.remove(file_path)
-
