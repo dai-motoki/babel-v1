@@ -5,7 +5,7 @@ import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 import SpriteText from 'three-spritetext';
 import Draggable from 'react-draggable';
-import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus, Box } from 'lucide-react';
+import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus, Box, Play, Save } from 'lucide-react';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 import HighlightedGroups from './HighlightedGroups';
@@ -38,6 +38,11 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [error, setError] = useState(null);
   const { changes, handleFileChange: originalHandleFileChange } = useFileChanges();
   const [fileHistory, setFileHistory] = useState<{ [key: string]: string[] }>({});
+const [isLayoutMode, setIsLayoutMode] = useState(false);
+const [nodePositions, setNodePositions] = useLocalStorage<{ [key: string]: { x: number, y: number } }>(
+  `graphLayout_${selectedSystem}`,
+  {}
+);
 
   useEffect(() => {
     const storedGroups = localStorage.getItem(`highlightedNodeGroups_${selectedSystem}`);
@@ -87,6 +92,8 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showTaskManager, setShowTaskManager] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [is3D, setIs3D] = useState(false);
+  const [isAdjustmentMode, setIsAdjustmentMode] = useState(false);
+  const [savedLayout, setSavedLayout] = useLocalStorage(`graphLayout_${selectedSystem}`, null);
 
   useEffect(() => {
     let ws: WebSocket;
@@ -160,6 +167,11 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           throw new Error('ディレクトリ構造データが不正です');
         }
         const transformedData = transformApiResponse(data.structure);
+        const nodesWithPositions = transformedData.nodes.map(node => ({
+          ...node,
+          x: nodePositions[node.id]?.x || undefined,
+          y: nodePositions[node.id]?.y || undefined,
+        }));
         setDirectoryStructure(transformedData);
         setFilteredNodes(transformedData.nodes);
         setFilteredLinks(transformedData.links);
@@ -398,6 +410,44 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     setSelectionPath([]);
   };
 
+  const toggleAdjustmentMode = () => {
+    setIsAdjustmentMode(!isAdjustmentMode);
+    if (fgRef.current) {
+      if (!isAdjustmentMode) {
+        // グラフ調整モードを有効にする
+        fgRef.current.d3Force('center', null);
+        fgRef.current.d3Force('charge', null);
+        fgRef.current.d3Force('link', null);
+        fgRef.current.d3Force('collide', null);
+      } else {
+        // グラフ調整モードを無効にする
+        fgRef.current.d3Force('center', d3.forceCenter());
+        fgRef.current.d3Force('charge', d3.forceManyBody());
+        fgRef.current.d3Force('link', d3.forceLink().id(d => d.id));
+        fgRef.current.d3Force('collide', d3.forceCollide(node => 12));
+      }
+    }
+  };
+
+  const saveLayout = () => {
+    if (fgRef.current) {
+      const nodes = fgRef.current.graphData().nodes;
+      const layout = nodes.map(node => ({ id: node.id, x: node.x, y: node.y }));
+      setSavedLayout(layout);
+    }
+  };
+
+  useEffect(() => {
+    if (savedLayout && fgRef.current) {
+      const graphData = fgRef.current.graphData();
+      const updatedNodes = graphData.nodes.map(node => {
+        const savedNode = savedLayout.find(n => n.id === node.id);
+        return savedNode ? { ...node, x: savedNode.x, y: savedNode.y } : node;
+      });
+      fgRef.current.graphData({ nodes: updatedNodes, links: graphData.links });
+    }
+  }, [savedLayout]);
+
   const forceGraphConfig = useMemo(() => ({
     graphData: { nodes: filteredNodes, links: filteredLinks },
     nodeLabel: "name",
@@ -462,7 +512,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         ctx.arc(node.x, node.y, circleRadius, 0, 2 * Math.PI);
         ctx.strokeStyle = highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) ? 'rgba(255, 255, 255, 1)' : 
                           node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : 
-                          node.type === 'directory' ? 'rgba(220, 230, 255, 0.9)' : // 白っぽい輝く色を使用
+                          node.type === 'directory' ? 'rgba(220, 230, 255, 0.9)' : // っぽい輝く色を使用
                           selectedNodesInPath.some(n => n.id === node.id) ? 'rgba(255, 0, 0, 0.8)' :
                           'rgba(255, 255, 255, 0.8)';
         ctx.lineWidth = highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) || selectedNodesInPath.some(n => n.id === node.id) ? 3 : 2;
@@ -490,10 +540,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     cooldownTime: 15000,
     width: 1300,
     height: 600,
-    enableNodeDrag: !isSelectionMode,
-    enablePanInteraction: !isSelectionMode,
-    enableZoomInteraction: !isSelectionMode,
-  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode]);
+    enableNodeDrag: isAdjustmentMode,
+    enablePanInteraction: !isSelectionMode && !isAdjustmentMode,
+    enableZoomInteraction: !isSelectionMode && !isAdjustmentMode,
+  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode, isAdjustmentMode]);
 
   const forceGraph3DConfig = {
     ...forceGraphConfig,
@@ -553,6 +603,17 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         toggleSelectionMode={toggleSelectionMode}
         is3D={is3D}
         toggle2D3D={toggle2D3D}
+        isAdjustmentMode={isAdjustmentMode}
+        toggleAdjustmentMode={toggleAdjustmentMode}
+        isLayoutMode={isLayoutMode}
+        toggleLayoutMode={() => setIsLayoutMode(!isLayoutMode)}
+        saveLayout={() => {
+          const currentLayout = filteredNodes.reduce((acc, node) => {
+            acc[node.id] = { x: node.x, y: node.y };
+            return acc;
+          }, {});
+          setNodePositions(currentLayout);
+        }}
       />
 
 
@@ -587,6 +648,8 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               forceGraphConfig={forceGraphConfig}
               forceGraph3DConfig={forceGraph3DConfig}
               memoizedForceGraphData={memoizedForceGraphData}
+              isLayoutMode={isLayoutMode}
+              nodePositions={nodePositions}
             />
 
             <GraphOverlay

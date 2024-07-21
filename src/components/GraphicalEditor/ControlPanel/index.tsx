@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { MousePointer, Box, Play } from 'lucide-react';
+import { MousePointer, Box, Play, Move, Save } from 'lucide-react';
 import Button from '@/components/common/Button';
 import SearchBar from '../SearchBar';
 
@@ -15,7 +14,9 @@ interface ControlPanelProps {
   toggleSelectionMode: () => void;
   is3D: boolean;
   toggle2D3D: () => void;
-  // executeFile: () => void;
+  isLayoutMode: boolean;
+  toggleLayoutMode: () => void;
+  saveLayout: () => void;
 }
 
 // ControlPanelコンポーネントの定義
@@ -28,7 +29,9 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   toggleSelectionMode,
   is3D,
   toggle2D3D,
-  executeFile
+  isLayoutMode,
+  toggleLayoutMode,
+  saveLayout
 }) => {
   const { t } = useTranslation();
 
@@ -51,6 +54,20 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
           <Box className="w-4 h-4 mr-2" />
           {is3D ? "2D" : "3D"}
         </Button>
+
+        <Button
+          onClick={toggleLayoutMode}
+          className={isLayoutMode ? 'bg-blue-500' : ''}
+        >
+          <Move className="w-4 h-4 mr-2" />
+          {isLayoutMode ? t('レイアウトモード: ON') : t('レイアウトモード: OFF')}
+        </Button>
+        {isLayoutMode && (
+          <Button onClick={saveLayout}>
+            <Save className="w-4 h-4 mr-2" />
+            {t('レイアウトを保存')}
+          </Button>
+        )}
       </div>
     </div>
   );
