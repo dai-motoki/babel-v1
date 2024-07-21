@@ -443,6 +443,117 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     enablePanInteraction: !isSelectionMode,
     enableZoomInteraction: !isSelectionMode,
     onBackgroundClick: handleBackgroundClick,
+    onNodeDragStart: (node) => {
+      node.__initialDragPosition = { x: node.x, y: node.y };
+      node.__r = 10; // ドラッグ中はノードを大きくする
+    },
+    onNodeDrag: (node, translate) => {
+      if (node.__initialDragPosition) {
+        node.x = node.__initialDragPosition.x + translate.x;
+        node.y = node.__initialDragPosition.y + translate.y;
+      }
+      
+      // 近くのノードを探す
+      const nearbyNode = filteredNodes.find(n => 
+        n !== node && 
+        Math.hypot(n.x - node.x, n.y - node.y) < 30
+      );
+      
+      if (nearbyNode) {
+        nearbyNode.__r = 15; // 近くのノードも大きくする
+      }
+    },
+    onNodeDragEnd: (node) => {
+      delete node.__initialDragPosition;
+      delete node.__r;
+      
+      const nearbyNode = filteredNodes.find(n => 
+        n !== node && 
+        Math.hypot(n.x - node.x, n.y - node.y) < 30
+      );
+      
+      if (nearbyNode) {
+        delete nearbyNode.__r;
+        // 新しいリンクを作成
+        const newLink = {
+          source: node.id,
+          target: nearbyNode.id
+        };
+        setFilteredLinks(prevLinks => [...prevLinks, newLink]);
+      }
+    },
+    nodeCanvasObject: (node, ctx, globalScale) => {
+      const label = node.name;
+      const fontSize = node.type === 'directory' ? 14/globalScale : 12/globalScale;
+      ctx.font = `${fontSize}px Sans-Serif`;
+      const textWidth = ctx.measureText(label).width;
+      const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
+
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.type === 'directory' ? 6 : 4, 0, 2 * Math.PI);
+      ctx.fillStyle = getNodeColor(node);
+      ctx.fill();
+
+      if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) || selectedNodesInPath.some(n => n.id === node.id)) {
+        const baseGlowRadius = node.type === 'directory' ? 8 : 6;
+        const time = performance.now() / 1000;
+        const glowRadius = baseGlowRadius + Math.sin(time * 1.5) * 2;
+        
+        if (isFinite(node.x) && isFinite(node.y)) {
+          const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowRadius);
+          if (highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected))) {
+            gradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.7 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          } else if (node.name === 'meta') {
+            gradient.addColorStop(0, `rgba(255, 215, 0, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
+            gradient.addColorStop(0.5, `rgba(255, 215, 0, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+          } else if (node.type === 'directory') {
+            gradient.addColorStop(0, `rgba(0, 255, 255, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
+            gradient.addColorStop(0.5, `rgba(0, 255, 255, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
+          } else if (selectedNodesInPath.some(n => n.id === node.id)) {
+            gradient.addColorStop(0, `rgba(255, 0, 0, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
+            gradient.addColorStop(0.5, `rgba(255, 0, 0, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+          } else {
+            gradient.addColorStop(0, `rgba(255, 255, 255, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
+            gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          }
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, glowRadius, 0, 2 * Math.PI);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+        }
+
+        ctx.beginPath();
+        const circleRadius = node.type === 'directory' ? 6 : 4;
+        ctx.arc(node.x, node.y, circleRadius, 0, 2 * Math.PI);
+        ctx.strokeStyle = highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) ? 'rgba(255, 255, 255, 1)' : 
+                          node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : 
+                          node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 
+                          selectedNodesInPath.some(n => n.id === node.id) ? 'rgba(255, 0, 0, 0.8)' :
+                          'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) || selectedNodesInPath.some(n => n.id === node.id) ? 3 : 2;
+        ctx.stroke();
+      }
+
+      if (showFileNames) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillText(label, node.x, node.y + fontSize * 1.5);
+      }
+
+      node.__bckgDimensions = bckgDimensions;
+    },
+    d3Force: (d3Force) => {
+      d3Force('charge').strength(-100);
+      d3Force('link').distance(50);
+      d3Force('collide', d3.forceCollide(30));
+    },
   }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode, handleBackgroundClick]);
 
   const forceGraph3DConfig = {
@@ -467,6 +578,30 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const toggle2D3D = () => {
     setIs3D(!is3D);
   };
+
+  const handleNodeRightClick = useCallback((node, event) => {
+    event.preventDefault();
+    if (window.confirm('このノードを削除しますか？')) {
+      setFilteredNodes(prevNodes => prevNodes.filter(n => n.id !== node.id));
+      setFilteredLinks(prevLinks => prevLinks.filter(l => l.source !== node.id && l.target !== node.id));
+    }
+  }, []);
+
+  const handleLinkRightClick = useCallback((link, event) => {
+    event.preventDefault();
+    if (window.confirm('このリンクを削除しますか？')) {
+      setFilteredLinks(prevLinks => prevLinks.filter(l => l !== link));
+    }
+  }, []);
+
+  const handleNodeClick = useCallback((node, event) => {
+    const newName = prompt('新しい名前を入力してください:', node.name);
+    if (newName) {
+      setFilteredNodes(prevNodes => 
+        prevNodes.map(n => n.id === node.id ? { ...n, name: newName } : n)
+      );
+    }
+  }, []);
 
   if (!selectedSystem) {
     return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('システムディレクトリを選択してください')}</div>;
@@ -525,6 +660,9 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               forceGraphConfig={forceGraphConfig}
               forceGraph3DConfig={forceGraph3DConfig}
               memoizedForceGraphData={memoizedForceGraphData}
+              onNodeRightClick={handleNodeRightClick}
+              onLinkRightClick={handleLinkRightClick}
+              onNodeClick={handleNodeClick}
             />
 
             <GraphOverlay
