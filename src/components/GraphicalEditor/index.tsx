@@ -443,8 +443,8 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     onNodeClick: handleClick,
     cooldownTicks: 1000,
     cooldownTime: 15000,
-    width: 2000,
-    height: 1000,
+    width: 1400,
+    height: 600,
     enableNodeDrag: !isSelectionMode,
     enablePanInteraction: !isSelectionMode,
     enableZoomInteraction: !isSelectionMode,
@@ -572,14 +572,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     },
     onNodeRightClick: (node, event) => {
       event.preventDefault();
-      if (window.confirm('このノードを削除しますか？')) {
+      if (window.confirm('このノードを削除しますか？（実際のノードは削除されません）')) {
         setFilteredNodes(prevNodes => prevNodes.filter(n => n.id !== node.id));
         setFilteredLinks(prevLinks => prevLinks.filter(l => l.source !== node.id && l.target !== node.id));
       }
     },
     onLinkRightClick: (link, event) => {
       event.preventDefault();
-      if (window.confirm('このリンクを削除しますか？')) {
+      if (window.confirm('このリンクを削除しますか？（実際のリンクは削除されません）')) {
         setFilteredLinks(prevLinks => prevLinks.filter(l => l !== link));
       }
     },
@@ -610,7 +610,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   const handleNodeRightClick = useCallback((node, event) => {
     event.preventDefault();
-    if (window.confirm('このノードを削除しますか？')) {
+    if (window.confirm('このノードを削除しますか？（実際のノードは削除されません）')) {
       setFilteredNodes(prevNodes => prevNodes.filter(n => n.id !== node.id));
       setFilteredLinks(prevLinks => prevLinks.filter(l => l.source !== node.id && l.target !== node.id));
     }
@@ -618,7 +618,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   const handleLinkRightClick = useCallback((link, event) => {
     event.preventDefault();
-    if (window.confirm('このリンクを削除しますか？')) {
+    if (window.confirm('このリンクを削除しますか？（実際のリンクは削除されません）')) {
       setFilteredLinks(prevLinks => prevLinks.filter(l => l !== link));
     }
   }, []);
