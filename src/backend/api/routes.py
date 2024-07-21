@@ -157,8 +157,8 @@ async def create_new_system(name: str):
     # with open(main_readme_path, "w") as f:
     #     f.write(f"# {name}\n\nシステム概要と主要機能の説明\n\n## ディレクトリ構造\n\n" + "\n".join(f"- {subdir}" for subdir in subdirs))
     
-    # ../temp/ディレクトリの内容をコピー
-    temp_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'temp')
+    # ../grimoires/temp/ディレクトリの内容をコピー XXX Grimoires は一旦選べるように、のちに変更できるように。
+    temp_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'grimoires', 'temp')
     if os.path.exists(temp_dir):
         for item in os.listdir(temp_dir):
             s = os.path.join(temp_dir, item)
@@ -167,9 +167,9 @@ async def create_new_system(name: str):
                 shutil.copytree(s, d, dirs_exist_ok=True)
             else:
                 shutil.copy2(s, d)
-        logger.info(f"../temp/の内容を '{new_dir_path}' にコピーしました")
+        logger.info(f"../grimoires/temp/の内容を '{new_dir_path}' にコピーしました")
     else:
-        logger.warning("../temp/ディレクトリが見つかりません")
+        logger.warning("../grimoires/temp/ディレクトリが見つかりません")
     
     # # 設定ファイルを作成
     # config_path = os.path.join(new_dir_path, "config.json")
