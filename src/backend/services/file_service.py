@@ -254,9 +254,12 @@ from models.file import FileModel
 from utils.file_operations import get_file_size, ensure_directory_exists, read_file, write_file, append_to_file
 
 class FileService:
-    def __init__(self, upload_dir="/Users/motokidaisuke/babel-v1/src/"):
+    # def __init__(self, upload_dir="/Users/motokidaisuke/babel-v1/src/"):
+    def __init__(self, upload_dir=os.path.expanduser("~")):
         self.upload_dir = upload_dir
         ensure_directory_exists(self.upload_dir)
+        # ホームディレクトリを使用するように変更しました
+        # os.path.expanduser("~")を使用してクロスプラットフォームで動作するようにしました
 
     async def save_file(self, file: UploadFile) -> FileModel:
         file_path = os.path.join(self.upload_dir, file.filename)
