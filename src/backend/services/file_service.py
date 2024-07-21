@@ -42,7 +42,8 @@ def get_file_path(projectId: str, filename: str, upload_dir: str) -> str:
     projectIdに基づいてファイルパスを決定し、ファイルの存在を確認する関数
     """
     if projectId == "babel":
-        file_path = os.path.join(os.path.dirname(os.path.dirname(upload_dir)), filename)
+        file_path = os.path.join('..', filename)
+        print(file_path)
     else:
         file_path = os.path.join(os.path.expanduser("~"), "babel_generated", projectId, filename)
     
@@ -296,18 +297,6 @@ class FileService:
         file_path = get_file_path(projectId, filename, self.upload_dir)
         return read_file(file_path)
 
-        # projectIdに基づいてファイルパスを決定
-        if projectId == "babel":
-            file_path = os.path.join(os.path.dirname(os.path.dirname(self.upload_dir)), filename)
-        else:
-            file_path = os.path.join(os.path.expanduser("~"), "babel_generated", projectId, filename)
-        
-        # ファイルの存在確認
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"ファイル {filename} が見つかりません")
-        
-        # ファイルの読み込みと返却
-        return read_file(file_path)
 
     async def edit_file(self, filename: str, line_number: int, new_content: str):
         file_path = os.path.join(self.upload_dir, filename)
