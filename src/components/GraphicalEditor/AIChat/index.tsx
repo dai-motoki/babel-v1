@@ -399,35 +399,35 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
 
   return (
     <div className="fixed bottom-4 right-4 flex">
-      <Draggable bounds="parent">
+      <Draggable>
         <div
           ref={chatBoxRef}
-          className="w-96 h-[32rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
+          className="w-80 h-[28rem] bg-gradient-to-br from-[#1e1e1e] to-[#2d2d2d] text-[#d4d4d4] rounded-lg shadow-2xl flex flex-col overflow-hidden border border-[#3c3c3c]"
         >
           <div
-            className="flex justify-between items-center p-3 bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] cursor-move"
+            className="flex justify-between items-center p-2 bg-gradient-to-r from-[#2d2d2d] to-[#3c3c3c] text-[#d4d4d4] cursor-move"
           >
-            <h3 className="text-sm font-semibold flex items-center">
-              <span className="w-2 h-2 bg-[#0e639c] rounded-full mr-2"></span>
+            <h3 className="text-xs font-semibold flex items-center">
+              <span className="w-1.5 h-1.5 bg-[#0e639c] rounded-full mr-1.5"></span>
               {t('AIチャット')}
             </h3>
             <div className="flex items-center">
               <Button
                 onClick={() => setShowTaskManager(!showTaskManager)}
-                className="mr-2 text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200"
+                className="mr-1.5 text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200"
               >
                 <span className="text-xs">タスク</span>
               </Button>
               <Button onClick={onClose} className="text-[#d4d4d4] hover:text-white cursor-pointer transition-colors duration-200">
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3" />
               </Button>
             </div>
           </div>
-          <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-[#4c4c4c] scrollbar-track-[#2d2d2d]">
+          <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-3 space-y-3 scrollbar-thin scrollbar-thumb-[#4c4c4c] scrollbar-track-[#2d2d2d]">
             {messages.map((message, index) => (
               <div
                 key={message.id}
-                className={`p-3 rounded-lg text-sm ${
+                className={`p-2 rounded-lg text-xs ${
                   message.type === 'user'
                     ? 'bg-gradient-to-r from-[#264f78] to-[#1e3a5f] text-white ml-auto max-w-[75%]'
                     : message.type === 'ai'
@@ -436,41 +436,41 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                 }`}
               >
                 {message.type === 'ai' && message.filePath && (
-                  <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#4c4c4c]">
-                    <span className="font-bold text-xs truncate flex-grow mr-2">
-                      {message.filePath.length > 30
-                        ? `...${message.filePath.slice(-30)}`
+                  <div className="flex items-center justify-between mb-1.5 pb-1.5 border-b border-[#4c4c4c]">
+                    <span className="font-bold text-xs truncate flex-grow mr-1.5">
+                      {message.filePath.length > 25
+                        ? `...${message.filePath.slice(-25)}`
                         : message.filePath}
                     </span>
                     <div className="flex items-center">
                       {message.status === 'pending' ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-[#3b9cff]" />
+                        <Loader2 className="w-3 h-3 animate-spin text-[#3b9cff]" />
                       ) : message.status === 'completed' ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-3 h-3 text-green-500" />
                       ) : (
-                        <StopCircle className="w-4 h-4 text-red-500" />
+                        <StopCircle className="w-3 h-3 text-red-500" />
                       )}
                       <Button
                         onClick={() => toggleExpand(index)}
-                        className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
+                        className="ml-1.5 p-0.5 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
                       >
                         {message.isExpanded ? (
-                          <ChevronUp className="w-3 h-3 text-[#3b9cff]" />
+                          <ChevronUp className="w-2.5 h-2.5 text-[#3b9cff]" />
                         ) : (
-                          <ChevronDown className="w-3 h-3 text-[#3b9cff]" />
+                          <ChevronDown className="w-2.5 h-2.5 text-[#3b9cff]" />
                         )}
                       </Button>
                       <Button
                         onClick={() => copyMessageContent(message.content)}
-                        className="ml-2 p-1 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
+                        className="ml-1.5 p-0.5 hover:bg-[#4c4c4c] rounded transition-colors duration-200"
                       >
-                        <Copy className="w-3 h-3 text-[#3b9cff]" />
+                        <Copy className="w-2.5 h-2.5 text-[#3b9cff]" />
                       </Button>
                     </div>
                   </div>
                 )}
                 {(message.type !== 'ai' || message.isExpanded) && (
-                  <div className={`mt-2 ${message.isExpanded ? 'animate-fadeIn' : ''} overflow-hidden`}>
+                  <div className={`mt-1.5 ${message.isExpanded ? 'animate-fadeIn' : ''} overflow-hidden`}>
                     <div className="break-words">
                       {message.type === 'ai' ? renderMarkdown(message.content) : message.content}
                     </div>
@@ -480,48 +480,49 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
             ))}
             {Object.keys(pendingRequests).length > 0 && (
               <div className="text-center">
-                <span className="animate-pulse text-xs bg-[#3c3c3c] px-3 py-1 rounded-full">{t('AIが考え中...')}</span>
+                <span className="animate-pulse text-xs bg-[#3c3c3c] px-2 py-0.5 rounded-full">{t('AIが考え中...')}</span>
               </div>
             )}
           </div>
-          <div className="p-2 border-t border-[#3c3c3c] bg-[#2d2d2d] flex flex-wrap justify-center">
+          <div className="p-1.5 border-t border-[#3c3c3c] bg-[#2d2d2d] flex flex-wrap justify-center">
             {sampleQuestions.map((question, index) => (
               <button
                 key={index}
                 onClick={() => insertSampleQuestion(question)}
-                className="m-1 px-2 py-1 text-xs bg-[#3c3c3c] text-[#d4d4d4] rounded hover:bg-[#4c4c4c] transition-colors duration-200"
+                className="m-0.5 px-1.5 py-0.5 text-xs bg-[#3c3c3c] text-[#d4d4d4] rounded hover:bg-[#4c4c4c] transition-colors duration-200"
               >
                 {question}
               </button>
             ))}
           </div>
-          <form onSubmit={(e) => handleSubmit(e, false)} className="p-3 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
+          <form onSubmit={(e) => handleSubmit(e, false)} className="p-2 border-t border-[#3c3c3c] flex items-center bg-[#2d2d2d]">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={t('メッセージを入力...')}
-              className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0e639c] transition-all duration-200 mr-2"
+              className="flex-grow bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#0e639c] transition-all duration-200 mr-1.5"
             />
             <div className="flex">
               <Button
                 onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e, false)}
-                className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-4 py-2 hover:bg-[#4c4c4c] transition-all duration-200 mr-2"
+                className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-3 py-1.5 hover:bg-[#4c4c4c] transition-all duration-200 mr-1.5"
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-3 h-3" />
               </Button>
               <Button
                 onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleSubmit(e, true)}
-                className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-4 py-2 hover:bg-[#4c4c4c] transition-all duration-200"
+                className="bg-[#3c3c3c] text-[#d4d4d4] rounded-lg px-3 py-1.5 hover:bg-[#4c4c4c] transition-all duration-200"
               >
-                <Wrench className="w-4 h-4" />
+                <Wrench className="w-3 h-3" />
               </Button>
             </div>
           </form>
         </div>
       </Draggable>
+      <Draggable>
       {showTaskManager && (
-        <div className="ml-4">
+        <div className="ml-3">
           <TaskManager 
             tasks={tasks} 
             onClose={() => setShowTaskManager(false)} 
@@ -530,6 +531,8 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
           />
         </div>
       )}
+
+      </Draggable>
     </div>
   );
 };

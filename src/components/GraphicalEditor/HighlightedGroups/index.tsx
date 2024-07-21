@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HighlightedGroup } from '@/types';
 import { Network, Plus, Trash } from 'lucide-react';
@@ -26,7 +25,8 @@ const HighlightedGroups: React.FC<HighlightedGroupsProps> = ({
   highlightNode
 }) => {
   return (
-    <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs max-h-[50vh] overflow-y-auto">
+    <div className="bg-[#2a2a2a] bg-opacity-70 rounded p-2 max-w-xs max-h-[50vh] overflow-y-auto absolute top-4 left-4 z-50">
+      {/* コンポーネントの内容は変更なし */}
       <div className="flex border-b border-gray-600">
         {highlightedNodeGroups.map((group) => (
           <button

@@ -1,3 +1,6 @@
+import asyncio
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 import os
 import json
 import logging
@@ -255,11 +258,9 @@ from utils.file_operations import get_file_size, ensure_directory_exists, read_f
 
 class FileService:
     # def __init__(self, upload_dir="/Users/motokidaisuke/babel-v1/src/"):
-    def __init__(self, upload_dir=os.path.expanduser("~")):
+    def __init__(self, upload_dir="/Users/motokidaisuke/"):
         self.upload_dir = upload_dir
         ensure_directory_exists(self.upload_dir)
-        # ホームディレクトリを使用するように変更しました
-        # os.path.expanduser("~")を使用してクロスプラットフォームで動作するようにしました
 
     async def save_file(self, file: UploadFile) -> FileModel:
         file_path = os.path.join(self.upload_dir, file.filename)
@@ -298,3 +299,38 @@ class FileService:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File {filename} not found")
         os.remove(file_path)
+
+
+
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+class FileChangeHandler(FileSystemEventHandler):
+    def __init__(self):
+        self.changes = set()
+
+    def on_any_event(self, event):
+        if not event.is_directory:
+            self.changes.add((event.event_type, event.src_path))
+
+async def watch_directory(directory_path: str):
+    event_handler = FileChangeHandler()
+    observer = Observer()
+    observer.schedule(event_handler, directory_path, recursive=True)
+    observer.start()
+    
+    try:
+        while True:
+            await asyncio.sleep(1)
+            if event_handler.changes:
+                changes = list(event_handler.changes)
+                event_handler.changes.clear()
+                yield changes
+    finally:
+        observer.stop()
+        observer.join()
+
+async def get_file_changes(directory_path: str):
+    async for changes in watch_directory(directory_path):
+        logger.info(f"検知された変更: {changes}")
+        # ここで必要な処理を行います（例：WebSocketを通じてクライアントに通知する）

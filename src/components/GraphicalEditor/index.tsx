@@ -435,9 +435,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       />
 
 
-      <div className="flex-grow flex">
-        <div className="w-full flex flex-col">
-      {/* <RecentChanges changes={changes} /> */}
       <HighlightedGroups
         highlightedNodeGroups={highlightedNodeGroups}
         selectedGroupId={selectedGroupId}
@@ -448,6 +445,9 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         removeHighlightGroup={removeHighlightGroup}
         highlightNode={highlightNode}
       />
+      <RecentChanges changes={changes} />
+      <div className="flex-grow flex">
+        <div className="w-full flex flex-col">
 
           {selectedNodes.map((node) => (
             <MockEditor
