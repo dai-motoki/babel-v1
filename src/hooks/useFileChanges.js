@@ -4,7 +4,13 @@ const useFileChanges = () => {
   const [changes, setChanges] = useState([]);
 
   const handleFileChange = useCallback((data) => {
-    setChanges(prevChanges => [...prevChanges, ...data.changes]);
+    if (Array.isArray(data)) {
+      setChanges(prevChanges => [...prevChanges, ...data]);
+    } else if (data.changes && Array.isArray(data.changes)) {
+      setChanges(prevChanges => [...prevChanges, ...data.changes]);
+    } else {
+      console.error('Invalid data format in handleFileChange:', data);
+    }
   }, []);
 
   useEffect(() => {

@@ -35,6 +35,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { changes, handleFileChange } = useFileChanges();
+  
   const [selectedStructure, setSelectedStructure] = useState('FileTree');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredNodes, setFilteredNodes] = useState([]);
@@ -49,6 +50,50 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showTaskManager, setShowTaskManager] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [is3D, setIs3D] = useState(false);
+
+
+  useEffect(() => {
+    let ws: WebSocket;
+  
+    const connectWebSocket = () => {
+      ws = new WebSocket('ws://localhost:8001/ws');
+  
+      ws.onopen = () => {
+        console.log('WebSocket接続が確立されました');
+      };
+  
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.changes) {
+          const newChanges = data.changes.map((change: any) => ({
+            fileName: change.path.split('/babel_generated/').pop() || change.path,
+            timestamp: new Date().toISOString(),
+            type: change.type
+          }));
+          handleFileChange(newChanges);
+        }
+      };
+  
+      ws.onclose = () => {
+        console.log('WebSocket接続が閉じられました。再接続を試みます...');
+        setTimeout(connectWebSocket, 3000);
+      };
+  
+      ws.onerror = (error) => {
+        console.error('WebSocketエラー:', error);
+      };
+    };
+  
+    connectWebSocket();
+  
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [handleFileChange]);
+
+
 
   const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
     const savedGroups = localStorage.getItem('highlightedNodeGroups');
