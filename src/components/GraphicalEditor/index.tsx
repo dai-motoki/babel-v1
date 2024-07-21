@@ -341,6 +341,21 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     setSelectionPath([]);
   };
 
+  const handleBackgroundClick = useCallback((event) => {
+    if (!isSelectionMode) {
+      const { x, y } = fgRef.current.screen2GraphCoords(event.clientX, event.clientY);
+      const newNodeId = `new_node_${Date.now()}`;
+      const newNode = {
+        id: newNodeId,
+        name: `新規ノード ${filteredNodes.length + 1}`,
+        x,
+        y,
+        type: 'file'
+      };
+      setFilteredNodes(prevNodes => [...prevNodes, newNode]);
+    }
+  }, [isSelectionMode, filteredNodes]);
+
   const forceGraphConfig = useMemo(() => ({
     graphData: { nodes: filteredNodes, links: filteredLinks },
     nodeLabel: "name",
@@ -427,7 +442,8 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
     enableNodeDrag: !isSelectionMode,
     enablePanInteraction: !isSelectionMode,
     enableZoomInteraction: !isSelectionMode,
-  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode]);
+    onBackgroundClick: handleBackgroundClick,
+  }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode, handleBackgroundClick]);
 
   const forceGraph3DConfig = {
     ...forceGraphConfig,
