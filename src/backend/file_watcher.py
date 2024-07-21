@@ -34,10 +34,6 @@ class FileChangeHandler(FileSystemEventHandler):
 
     def on_any_event(self, event):
         logging.debug(f"イベント検知: {event.event_type} - {event.src_path}")
-        if event.is_directory:
-            logging.debug("ディレクトリイベントのためスキップします")
-            return
-        # イベントが監視対象のディレクトリ内で発生したかチェック
         if any(event.src_path.startswith(dir) for dir in self.watched_dirs):
             self.changes.add((event.event_type, event.src_path))
             logging.info(f"変更検知: {event.event_type} - {event.src_path}")
