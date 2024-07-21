@@ -353,8 +353,14 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         type: 'file'
       };
       setFilteredNodes(prevNodes => [...prevNodes, newNode]);
+      
+      // 新しいノードを中心に配置
+      if (fgRef.current) {
+        fgRef.current.centerAt(x, y, 1000);
+        fgRef.current.zoom(1.2, 1000);
+      }
     }
-  }, [isSelectionMode, filteredNodes]);
+  }, [isSelectionMode, filteredNodes, fgRef]);
 
   const forceGraphConfig = useMemo(() => ({
     graphData: { nodes: filteredNodes, links: filteredLinks },
@@ -456,24 +462,33 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       // 近くのノードを探す
       const nearbyNode = filteredNodes.find(n => 
         n !== node && 
-        Math.hypot(n.x - node.x, n.y - node.y) < 30
+        Math.hypot(n.x - node.x, n.y - node.y) < 50
       );
       
       if (nearbyNode) {
         nearbyNode.__r = 15; // 近くのノードも大きくする
+        nearbyNode.__highlight = true; // ハイライト用フラグ
+        node.__highlight = true;
+      } else {
+        filteredNodes.forEach(n => {
+          delete n.__highlight;
+          if (n !== node) delete n.__r;
+        });
       }
     },
     onNodeDragEnd: (node) => {
       delete node.__initialDragPosition;
       delete node.__r;
+      delete node.__highlight;
       
       const nearbyNode = filteredNodes.find(n => 
         n !== node && 
-        Math.hypot(n.x - node.x, n.y - node.y) < 30
+        Math.hypot(n.x - node.x, n.y - node.y) < 50
       );
       
       if (nearbyNode) {
         delete nearbyNode.__r;
+        delete nearbyNode.__highlight;
         // 新しいリンクを作成
         const newLink = {
           source: node.id,
@@ -489,9 +504,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       const textWidth = ctx.measureText(label).width;
       const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
 
+      const radius = node.__r || (node.type === 'directory' ? 6 : 4);
       ctx.beginPath();
-      ctx.arc(node.x, node.y, node.type === 'directory' ? 6 : 4, 0, 2 * Math.PI);
-      ctx.fillStyle = getNodeColor(node);
+      ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = node.__highlight ? 'rgba(255, 0, 0, 0.8)' : getNodeColor(node);
       ctx.fill();
 
       if (node.type === 'directory' || selectedNodes.some(n => n.id === node.id) || node.name === 'meta' || highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) || selectedNodesInPath.some(n => n.id === node.id)) {
@@ -553,6 +569,19 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       d3Force('charge').strength(-100);
       d3Force('link').distance(50);
       d3Force('collide', d3.forceCollide(30));
+    },
+    onNodeRightClick: (node, event) => {
+      event.preventDefault();
+      if (window.confirm('このノードを削除しますか？')) {
+        setFilteredNodes(prevNodes => prevNodes.filter(n => n.id !== node.id));
+        setFilteredLinks(prevLinks => prevLinks.filter(l => l.source !== node.id && l.target !== node.id));
+      }
+    },
+    onLinkRightClick: (link, event) => {
+      event.preventDefault();
+      if (window.confirm('このリンクを削除しますか？')) {
+        setFilteredLinks(prevLinks => prevLinks.filter(l => l !== link));
+      }
     },
   }), [getNodeColor, handleClick, selectedNodes, filteredNodes, filteredLinks, showFileNames, highlightedNodeGroups, selectedNodesInPath, isSelectionMode, handleBackgroundClick]);
 
