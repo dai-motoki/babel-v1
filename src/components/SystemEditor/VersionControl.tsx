@@ -137,7 +137,9 @@ export function VersionControl() {
 
   const ディレクトリ選択処理 = (選択されたディレクトリ) => {
     console.log('選択されたディレクトリ:', 選択されたディレクトリ);
-    setselectedSystem (選択されたディレクトリ.value);
+    setselectedSystem(選択されたディレクトリ.value);
+    // URLを更新
+    window.history.pushState({}, '', `/development/editor?system=${encodeURIComponent(選択されたディレクトリ.value)}`);
   };
 
   const 新規システム作成処理 = () => {
