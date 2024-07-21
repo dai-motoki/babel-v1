@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import SpriteText from 'three-spritetext';
 import Draggable from 'react-draggable';
 import { Copy, Trash, Highlighter, Network, Edit, MessageCircle, MousePointer, ListTodo, Plus, Box } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 import HighlightedGroups from './HighlightedGroups';
 import RecentChanges from './RecentChanges';
@@ -34,8 +35,25 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [directoryStructure, setDirectoryStructure] = useState({ nodes: [], links: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { changes, handleFileChange } = useFileChanges();
-  
+  const { changes, handleFileChange: originalHandleFileChange } = useFileChanges();
+  const [fileHistory, setFileHistory] = useState<{ [key: string]: string[] }>({});
+
+  const handleFileChange = useCallback((newChanges) => {
+    originalHandleFileChange(newChanges);
+    
+    // ファイル履歴の更新
+    setFileHistory((prevHistory) => {
+      const newHistory = { ...prevHistory };
+      newChanges.forEach((change) => {
+        if (!newHistory[change.fileName]) {
+          newHistory[change.fileName] = [];
+        }
+        newHistory[change.fileName].push(change.content);
+      });
+      return newHistory;
+    });
+  }, [originalHandleFileChange]);
+
   const [selectedStructure, setSelectedStructure] = useState('FileTree');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredNodes, setFilteredNodes] = useState([]);
@@ -50,7 +68,6 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showTaskManager, setShowTaskManager] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [is3D, setIs3D] = useState(false);
-
 
   useEffect(() => {
     let ws: WebSocket;
@@ -120,12 +137,33 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       setIsLoading(true);
       if (selectedSystem) {
         const data = await fetchDirectoryStructure(selectedSystem);
+        if (!data || !data.structure) {
+          throw new Error('ディレクトリ構造データが不正です');
+        }
         const transformedData = transformApiResponse(data.structure);
         setDirectoryStructure(transformedData);
         setFilteredNodes(transformedData.nodes);
         setFilteredLinks(transformedData.links);
+  
+        // ファイル履歴の更新
+        setFileHistory(prevHistory => {
+          const newHistory = { ...prevHistory };
+          transformedData.nodes.forEach((node) => {
+            if (node.type === 'file') {
+              if (!newHistory[node.id]) {
+                newHistory[node.id] = [node.content];
+              } else if (newHistory[node.id][newHistory[node.id].length - 1] !== node.content) {
+                newHistory[node.id].push(node.content);
+              }
+            }
+          });
+          return newHistory;
+        });
+      } else {
+        throw new Error('システムが選択されていません');
       }
     } catch (err) {
+      console.error('ディレクトリ構造の読み込み中にエラーが発生しました:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -457,11 +495,21 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   }
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-full text-[#d4d4d4]">{t('ディレクトリ構造を読み込み中...')}</div>;
+    return (
+      <div className="flex justify-center items-center h-full text-[#d4d4d4]">
+        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+        {t('ディレクトリ構造を読み込み中...')}
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="flex justify-center items-center h-full text-red-500">{t('エラー')}: {error}</div>;
+    return (
+      <div className="flex justify-center items-center h-full text-red-500">
+        <AlertTriangle className="w-6 h-6 mr-2" />
+        {t('エラー')}: {error}
+      </div>
+    );
   }
 
   return (
@@ -490,7 +538,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         removeHighlightGroup={removeHighlightGroup}
         highlightNode={highlightNode}
       />
-      <RecentChanges changes={changes} />
+      <RecentChanges changes={changes} fileHistory={fileHistory} />
       <div className="flex-grow flex">
         <div className="w-full flex flex-col">
 

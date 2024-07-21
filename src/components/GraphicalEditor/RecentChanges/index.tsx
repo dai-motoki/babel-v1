@@ -9,9 +9,10 @@ interface Change {
 
 interface RecentChangesProps {
   changes: Change[];
+  fileHistory: { [key: string]: string[] };
 }
 
-const RecentChanges: React.FC<RecentChangesProps> = ({ changes }) => {
+const RecentChanges: React.FC<RecentChangesProps> = ({ changes, fileHistory }) => {
   const { t } = useTranslation();
 
   return (
@@ -23,6 +24,14 @@ const RecentChanges: React.FC<RecentChangesProps> = ({ changes }) => {
             <li key={index} className="flex justify-between">
               <span>{change.fileName} ({change.type})</span>
               <span>{new Date(change.timestamp).toLocaleTimeString()}</span>
+            </li>
+          ))}
+        </ul>
+        <h4 className="text-[#d4d4d4] text-sm font-semibold mt-4 mb-2">{t('ファイル履歴')}</h4>
+        <ul className="text-[#d4d4d4] text-xs space-y-1">
+          {Object.entries(fileHistory).map(([fileName, history]) => (
+            <li key={fileName}>
+              <span>{fileName}: {history.length} {t('バージョン')}</span>
             </li>
           ))}
         </ul>
