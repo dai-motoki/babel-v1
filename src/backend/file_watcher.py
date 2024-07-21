@@ -89,18 +89,12 @@ async def startup_event():
     asyncio.create_task(broadcast_changes())
 
 @app.post("/api/save-file")
-async def save_file(file_path: str = Body(...), content: str = Body(...)):
+async def save_file(project_id: str = Body(...), file_path: str = Body(...), content: str = Body(...)):
     logging.info(f"ファイル保存リクエスト: {file_path}")
     try:
-        # 1つ上の階層をベースにしてファイルパスを構築
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        full_path = os.path.join(base_dir, file_path)
+        # project_idに基づいてファイルパスを決定
+        full_path = get_file_path(project_id, file_path, "")
         logging.debug(f"保存先フルパス: {full_path}")
-        
-        # ファイルが指定されたディレクトリ内にあることを確認
-        if not os.path.abspath(full_path).startswith(base_dir):
-            logging.warning(f"無効なファイルパス: {full_path}")
-            raise HTTPException(status_code=400, detail="無効なファイルパスです")
         
         # ディレクトリが存在しない場合は作成
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
@@ -110,9 +104,26 @@ async def save_file(file_path: str = Body(...), content: str = Body(...)):
             file.write(content)
         logging.info(f"ファイルを保存しました: {full_path}")
         return JSONResponse(content={"message": "ファイルが正常に保存されました"}, status_code=200)
+    except FileNotFoundError as e:
+        logging.error(f"ファイルが見つかりません: {str(e)}")
+        raise HTTPException(status_code=404, detail=f"ファイルが見つかりません: {str(e)}")
     except Exception as e:
         logging.error(f"ファイルの保存中にエラーが発生しました: {str(e)}")
         raise HTTPException(status_code=500, detail=f"ファイルの保存中にエラーが発生しました: {str(e)}")
+
+def get_file_path(project_id: str, filename: str, upload_dir: str) -> str:
+    """
+    project_idに基づいてファイルパスを決定し、ファイルの存在を確認する関数
+    """
+    if project_id == "babel":
+        file_path = os.path.join('..', filename)
+    else:
+        file_path = os.path.join(os.path.expanduser("~"), "babel_generated", project_id, filename)
+    
+    if not os.path.exists(os.path.dirname(file_path)):
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    
+    return file_path
 
 if __name__ == "__main__":
     import uvicorn
