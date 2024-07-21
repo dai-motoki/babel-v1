@@ -24,7 +24,7 @@ export const CreateSystemDialog: React.FC<CreateSystemDialogProps> = ({ onClose,
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="systemName" className="block mb-2">
-              {t('作りたいシステムを記載してください:')}
+              {t('作りたいシステム名を記載してください:')}
             </label>
             <input
               type="text"

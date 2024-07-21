@@ -3,3 +3,50 @@
 __pycache__/
 *.pyc
 .vscode/
+# Next.js関連
+.next/
+.next
+out/
+node_modules/
+*.log
+
+# FastAPI関連
+venv/
+*.pyc
+__pycache__/
+
+# 開発環境関連
+.vscode/
+.idea/
+
+# OS関連
+.DS_Store
+Thumbs.db
+
+# 環境変数
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ビルド関連
+build/
+dist/
+
+# キャッシュ
+.cache/
+.npm/
+
+# テスト関連
+coverage/
+
+# その他
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# プロジェクト固有の設定
+# ここにプロジェクト固有の無視すべきファイルやディレクトリを追加してください
+

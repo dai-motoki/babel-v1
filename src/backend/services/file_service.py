@@ -223,8 +223,8 @@ def should_ignore(item, gitignore_patterns):
     if gitignore_patterns is None:
         return False
     
-    # node_modulesディレクトリと.gitディレクトリを無視
-    if 'node_modules' in item.split(os.path.sep) or '.git' in item.split(os.path.sep):
+    # node_modules、.git、.nextディレクトリを無視
+    if any(dir in item.split(os.path.sep) for dir in ['node_modules', '.git']):
         return True
     
     # その他の .gitignore パターンをチェック
@@ -232,7 +232,7 @@ def should_ignore(item, gitignore_patterns):
         if fnmatch.fnmatch(item, pattern):
             return True
         # ディレクトリパターンの場合、すべてのサブディレクトリを無視
-        if pattern.endswith('/') and item.startswith(pattern):
+        if pattern.endswith('/') and (item.startswith(pattern) or item.startswith(pattern.rstrip('/'))):
             return True
     
     return False
