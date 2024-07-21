@@ -37,15 +37,30 @@ logger.warning('警告メッセージ')
 logger.error('エラーメッセージ')
 logger.critical('クリティカルメッセージ')
 
-async def save_file(file_data: dict):
+def get_file_path(projectId: str, filename: str, upload_dir: str) -> str:
+    """
+    projectIdに基づいてファイルパスを決定し、ファイルの存在を確認する関数
+    """
+    if projectId == "babel":
+        file_path = os.path.join(os.path.dirname(os.path.dirname(upload_dir)), filename)
+    else:
+        file_path = os.path.join(os.path.expanduser("~"), "babel_generated", projectId, filename)
+    
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"ファイル {filename} が見つかりません")
+    
+    return file_path
+
+async def save_file(projectId: str, file_data: dict):
     logger.info(f"ファイル保存リクエストを受信: {file_data['file_path']}")
     logger.debug(f"ファイル内容のサイズ: {len(file_data['content'])} バイト")
     try:
-        logger.debug(f"ファイルを開いて書き込みを開始: {file_data['file_path']}")
-        async with aiofiles.open(file_data['file_path'], "w") as f:
+        file_path = get_file_path(projectId, file_data['file_path'], "")
+        logger.debug(f"ファイルを開いて書き込みを開始: {file_path}")
+        async with aiofiles.open(file_path, "w") as f:
             await f.write(file_data['content'])
-        logger.info(f"ファイルの保存に成功: {file_data['file_path']}")
-        logger.debug(f"保存されたファイルのパス: {os.path.abspath(file_data['file_path'])}")
+        logger.info(f"ファイルの保存に成功: {file_path}")
+        logger.debug(f"保存されたファイルのパス: {os.path.abspath(file_path)}")
         return {"message": "ファイルが正常に保存されました"}
     except IOError as io_err:
         logger.error(f"ファイルの書き込み中にIOエラーが発生: {str(io_err)}")
@@ -57,12 +72,13 @@ async def save_file(file_data: dict):
         logger.debug(f"エラーのトレースバック: ", exc_info=True)
         raise HTTPException(status_code=500, detail=f"予期せぬエラー: {str(e)}")
 
-async def load_file(filename: str):
+async def load_file(projectId: str, filename: str):
     logger.info(f"ファイル読み込みリクエストを受信: {filename}")
     try:
-        async with aiofiles.open(filename, "r") as f:
+        file_path = get_file_path(projectId, filename, "")
+        async with aiofiles.open(file_path, "r") as f:
             content = await f.read()
-        logger.info(f"ファイルの読み込みに成功: {filename}")
+        logger.info(f"ファイルの読み込みに成功: {file_path}")
         return content
     except FileNotFoundError:
         logger.error(f"ファイルが見つかりません: {filename}")
@@ -108,11 +124,6 @@ async def get_generated_dirs():
         logger.error(f"生成されたディレクトリの取得中にエラーが発生しました: {str(e)}", exc_info=True)
         logger.debug(f"エラーの詳細情報: {e.__class__.__name__}")
         raise HTTPException(status_code=500, detail="ディレクトリの取得に失敗しました")
-
-
-
-
-
 
 async def get_directory_structure(path_type: str):
     logger.info(f"ディレクトリ構造の取得を開始します。path_type: {path_type}")
@@ -179,8 +190,6 @@ async def get_directory_structure(path_type: str):
     except Exception as e:
         # logger.error(f"{path_type}のディレクトリ構造の取得中にエラーが発生しました: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="ディレクトリ構造の取得に失敗しました")
-
-# logger.info("アプリケーションが起動しました")
 
 def create_structure(path, base_path, gitignore_patterns):
     structure = []
@@ -257,13 +266,18 @@ from models.file import FileModel
 from utils.file_operations import get_file_size, ensure_directory_exists, read_file, write_file, append_to_file
 
 class FileService:
-    # def __init__(self, upload_dir="/Users/motokidaisuke/babel-v1/src/"):
-    def __init__(self, upload_dir="/Users/motokidaisuke/"):
+    def __init__(self, upload_dir=os.path.expanduser("~")):
+        """
+        FileServiceクラスのコンストラクタ
+        
+        Parameters:
+        upload_dir (str): ファイルをアップロードするディレクトリ。デフォルトはユーザーのホームディレクトリ。
+        """
         self.upload_dir = upload_dir
         ensure_directory_exists(self.upload_dir)
 
     async def save_file(self, file: UploadFile) -> FileModel:
-        file_path = os.path.join(self.upload_dir, file.filename)
+        file_path = get_file_path("babel", file.filename, self.upload_dir)
         with open(file_path, "wb") as buffer:
             content = await file.read()
             buffer.write(content)
@@ -273,13 +287,26 @@ class FileService:
     async def list_files(self) -> list[FileModel]:
         files = []
         for filename in os.listdir(self.upload_dir):
-            file_path = os.path.join(self.upload_dir, filename)
+            file_path = get_file_path("babel", filename, self.upload_dir)
             size = get_file_size(file_path)
             files.append(FileModel(filename=filename, size=size))
         return files
 
-    async def get_file_content(self, filename: str) -> str:
-        file_path = os.path.join(self.upload_dir, filename)
+    async def get_file_content(self, projectId: str, filename: str) -> str:
+        file_path = get_file_path(projectId, filename, self.upload_dir)
+        return read_file(file_path)
+
+        # projectIdに基づいてファイルパスを決定
+        if projectId == "babel":
+            file_path = os.path.join(os.path.dirname(os.path.dirname(self.upload_dir)), filename)
+        else:
+            file_path = os.path.join(os.path.expanduser("~"), "babel_generated", projectId, filename)
+        
+        # ファイルの存在確認
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"ファイル {filename} が見つかりません")
+        
+        # ファイルの読み込みと返却
         return read_file(file_path)
 
     async def edit_file(self, filename: str, line_number: int, new_content: str):
@@ -299,8 +326,6 @@ class FileService:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File {filename} not found")
         os.remove(file_path)
-
-
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler

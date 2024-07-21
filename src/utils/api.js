@@ -116,9 +116,9 @@ export const fetchDirectoryStructure = async (pathType) => {
 };
 
 // ファイルの内容を取得
-export const fetchFileContent = async (filePath) => {
+export const fetchFileContent = async (projectId, filePath) => {
   try {
-    const response = await fetch(`http://localhost:8000/api/files/content/${encodeURIComponent(filePath)}`, {
+    const response = await fetch(`http://localhost:8000/api/files/content/${projectId}/${encodeURIComponent(filePath)}`, {
       headers: {
         'accept': 'application/json'
       }
@@ -163,15 +163,14 @@ export const watchFileChanges = (callback) => {
 };
 
 // ファイルの内容を保存する関数
-export const saveFileContent = async (filePath, content) => {
+export const saveFileContent = async (projectId, filePath, content) => {
   try {
-    // const response = await fetch('http://localhost:8000/api/files/save_file', {
     const response = await fetch('http://localhost:8001/api/save-file', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ file_path: filePath, content }),
+      body: JSON.stringify({ project_id: projectId, file_path: filePath, content }),
     });
 
     if (!response.ok) {

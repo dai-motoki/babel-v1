@@ -67,7 +67,7 @@ monaco.editor.defineTheme('chic-blue', {
     'editorHoverWidget.background': '#00204008', // ホバーウィジェットの背景をさらに透明に
   }
 });
-const MockEditor = ({ node, onClose, onFileChange }) => {
+const MockEditor = ({ node, onClose, onFileChange, projectId }) => {
   const [position, setPosition] = useState({ x: window.innerWidth * 2/3, y: window.innerHeight / 2 - 250 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -114,8 +114,8 @@ const MockEditor = ({ node, onClose, onFileChange }) => {
       console.log('ファイル内容の読み込みを開始します');
       try {
         setIsLoading(true);
-        console.log(`ファイルパス: ${node.id}`);
-        const content = await fetchFileContent(node.id);
+        console.log(`ファイルパス: ${node.id}, プロジェクトID: ${projectId}`);
+        const content = await fetchFileContent(projectId, node.id);
         console.log('ファイル内容を取得しました');
         setFileContent(content);
         if (editorRef.current) {
@@ -131,7 +131,7 @@ const MockEditor = ({ node, onClose, onFileChange }) => {
     };
 
     loadFileContent();
-  }, [node.id]);
+  }, [node.id, projectId]);
 
   useEffect(() => {
     if (!isLoading && !error && containerRef.current) {
@@ -191,7 +191,7 @@ const MockEditor = ({ node, onClose, onFileChange }) => {
     saveTimeoutRef.current = setTimeout(async () => {
       setIsSaving(true);
       try {
-        await saveFileContent(node.id, value);
+        await saveFileContent(projectId, node.id, value);
         onFileChange({ changes: [{ type: 'modified', path: node.id }] });
       } catch (error) {
         console.error('ファイルの保存中にエラーが発生しました:', error);
@@ -199,7 +199,7 @@ const MockEditor = ({ node, onClose, onFileChange }) => {
         setIsSaving(false);
       }
     }, 1000); // 1秒後に保存
-  }, [node.id, onFileChange]);
+  }, [node.id, projectId, onFileChange]);
 
   // ファイル名から言語を推測する関数
   const getLanguageFromFileName = (fileName: string): string => {

@@ -38,18 +38,27 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const { changes, handleFileChange: originalHandleFileChange } = useFileChanges();
   const [fileHistory, setFileHistory] = useState<{ [key: string]: string[] }>({});
 
-  const handleFileChange = useCallback((newChanges) => {
+  const handleFileChange = useCallback((newChanges: any) => {
     originalHandleFileChange(newChanges);
     
     // ファイル履歴の更新
     setFileHistory((prevHistory) => {
       const newHistory = { ...prevHistory };
-      newChanges.forEach((change) => {
+      if (Array.isArray(newChanges)) {
+        newChanges.forEach((change) => {
+          if (!newHistory[change.fileName]) {
+            newHistory[change.fileName] = [];
+          }
+          newHistory[change.fileName].push(change.content);
+        });
+      } else if (typeof newChanges === 'object' && newChanges !== null) {
+        // newChangesが単一のオブジェクトの場合の処理
+        const change = newChanges;
         if (!newHistory[change.fileName]) {
           newHistory[change.fileName] = [];
         }
         newHistory[change.fileName].push(change.content);
-      });
+      }
       return newHistory;
     });
   }, [originalHandleFileChange]);
@@ -557,6 +566,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               node={node}
               onClose={() => setSelectedNodes(prev => prev.filter(n => n.id !== node.id))}
               onFileChange={handleFileChange}
+              projectId={selectedSystem}
             />
           ))}
           <div className="flex-grow relative">

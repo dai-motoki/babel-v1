@@ -21,10 +21,6 @@ from services.file_service import FileService
 from models.file import FileModel, FileEdit
 
 router = APIRouter(prefix="/api/files", tags=["files"])
-file_service = FileService()
-
-
-router = APIRouter(prefix="/api/files", tags=["files"])
 file_service = FileService(upload_dir="../")  # ベースディレクトリを設定
 
 @router.post("/upload")
@@ -40,10 +36,10 @@ async def list_files():
     files = await file_service.list_files()
     return {"files": [FileModel(filename=f.filename, size=f.size).dict() for f in files]}
 
-@router.get("/content/{file_path:path}")
-async def get_file_content(file_path: str):
+@router.get("/content/{project_id}/{file_path:path}")
+async def get_file_content(project_id: str, file_path: str):
     try:
-        content = await file_service.get_file_content(file_path)
+        content = await file_service.get_file_content(project_id, file_path)
         return {"filename": file_path, "content": content}
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
@@ -76,10 +72,13 @@ async def delete_file(filename: str):
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="File not found")
 
-
-
-
-
+@router.post("/save-file")
+async def save_file_route(file_content: dict):
+    try:
+        await file_service.save_file(file_content["project_id"], file_content["file_path"], file_content["content"])
+        return {"message": "ファイルが正常に保存されました"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/hello")
 async def hello():
@@ -100,10 +99,6 @@ async def generate_text_gpt4o_route(prompt: str):
 @router.post("/execute")
 async def execute_python_route(code_execution: CodeExecution):
     return await execute_python(code_execution.code)
-
-@router.post("/save_file")
-async def save_file_route(file_content: dict):
-    return await save_file(file_content)
 
 @router.get("/load_file")
 async def load_file_route(filename: str):
