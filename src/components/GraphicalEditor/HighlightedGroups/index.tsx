@@ -12,6 +12,7 @@ interface HighlightedGroupsProps {
   toggleGroupHighlight: (groupId: number, isSelected: boolean) => void;
   removeHighlightGroup: (groupId: number) => void;
   highlightNode: (node: any, groupId: number) => void;
+  selectedSystem: string;
 }
 
 const HighlightedGroups: React.FC<HighlightedGroupsProps> = ({

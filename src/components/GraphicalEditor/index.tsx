@@ -26,6 +26,7 @@ import useForceGraph from '@/hooks/useForceGraph';
 import { fetchDirectoryStructure } from '@/utils/api';
 import { transformApiResponse } from '@/utils/transformApiResponse';
 import { getNodeColor } from '@/utils/colors';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const fgRef = useRef();
@@ -37,6 +38,15 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [error, setError] = useState(null);
   const { changes, handleFileChange: originalHandleFileChange } = useFileChanges();
   const [fileHistory, setFileHistory] = useState<{ [key: string]: string[] }>({});
+
+  useEffect(() => {
+    const storedGroups = localStorage.getItem(`highlightedNodeGroups_${selectedSystem}`);
+    if (storedGroups) {
+      setHighlightedNodeGroups(JSON.parse(storedGroups));
+    } else {
+      setHighlightedNodeGroups([{ id: 1, name: 'グループ1', nodes: [] }]);
+    }
+  }, [selectedSystem]);
 
   const handleFileChange = useCallback((newChanges: any) => {
     originalHandleFileChange(newChanges);
@@ -121,10 +131,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
 
 
-  const [highlightedNodeGroups, setHighlightedNodeGroups] = useState(() => {
-    const savedGroups = localStorage.getItem('highlightedNodeGroups');
-    return savedGroups ? JSON.parse(savedGroups) : [{ id: 1, name: 'グループ1', nodes: [] }];
-  });
+  const [highlightedNodeGroups, setHighlightedNodeGroups] = useLocalStorage<HighlightedGroup[]>(
+    `highlightedNodeGroups_${selectedSystem}`,
+    [{ id: 1, name: 'グループ1', nodes: [] }]
+  );
 
   const addNewHighlightGroup = useCallback(() => {
     setHighlightedNodeGroups(prevGroups => {
@@ -546,16 +556,17 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
       />
 
 
-      <HighlightedGroups
-        highlightedNodeGroups={highlightedNodeGroups}
-        selectedGroupId={selectedGroupId}
-        setSelectedGroupId={setSelectedGroupId}
-        addNewHighlightGroup={addNewHighlightGroup}
-        editGroupName={editGroupName}
-        toggleGroupHighlight={toggleGroupHighlight}
-        removeHighlightGroup={removeHighlightGroup}
-        highlightNode={highlightNode}
-      />
+<HighlightedGroups
+  highlightedNodeGroups={highlightedNodeGroups}
+  selectedGroupId={selectedGroupId}
+  setSelectedGroupId={setSelectedGroupId}
+  addNewHighlightGroup={addNewHighlightGroup}
+  editGroupName={editGroupName}
+  toggleGroupHighlight={toggleGroupHighlight}
+  removeHighlightGroup={removeHighlightGroup}
+  highlightNode={highlightNode}
+  selectedSystem={selectedSystem}
+/>
       <RecentChanges changes={changes} fileHistory={fileHistory} />
       <div className="flex-grow flex">
         <div className="w-full flex flex-col">
