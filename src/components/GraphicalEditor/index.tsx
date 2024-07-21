@@ -426,10 +426,10 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
             gradient.addColorStop(0.5, `rgba(255, 215, 0, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
           } else if (node.type === 'directory') {
-            // ディレクトリノードの場合、薄いシアン色のグラデーションを設定
-            gradient.addColorStop(0, `rgba(173, 216, 230, ${0.6 + Math.sin(time * 1.5) * 0.2})`);
-            gradient.addColorStop(0.5, `rgba(173, 216, 230, ${0.3 + Math.sin(time * 1.5) * 0.1})`);
-            gradient.addColorStop(1, 'rgba(173, 216, 230, 0)');
+            // ディレクトリノードの場合、より暗いシアン色のグラデーションを設定
+            gradient.addColorStop(0, `rgba(100, 150, 180, ${0.5 + Math.sin(time * 1.5) * 0.2})`);
+            gradient.addColorStop(0.5, `rgba(100, 150, 180, ${0.25 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(100, 150, 180, 0)');
           } else if (selectedNodesInPath.some(n => n.id === node.id)) {
             // 選択されたパス上のノードの場合、赤色のグラデーションを設定
             gradient.addColorStop(0, `rgba(255, 0, 0, ${0.8 + Math.sin(time * 1.5) * 0.2})`);

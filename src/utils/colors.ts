@@ -14,7 +14,8 @@ export const getNodeColor = (node) => {
       'locales': 'rgba(0, 250, 154, 1)',
       'meta': 'rgba(255, 215, 0, 1)'
     };
-    return specialDirectoryColors[node.name] || 'rgba(255, 255, 255, 0.8)';
+    // ノード名に対応する特別な色がない場合は、落ち着いたグレーを返す
+    return specialDirectoryColors[node.name] || 'rgba(200, 200, 200, 0.6)';
   }
   const extension = node.name.split('.').pop().toLowerCase();
   switch (extension) {
