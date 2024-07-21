@@ -400,25 +400,34 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         const time = performance.now() / 1000;
         const glowRadius = baseGlowRadius + Math.sin(time * 1.5) * 2;
         
+        // ノードの座標が有限値であることを確認
         if (isFinite(node.x) && isFinite(node.y)) {
+          // ノードの位置を中心とした放射状グラデーションを作成
           const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowRadius);
+          
+          // ハイライトされたノードグループに属しているかチェック
           if (highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected))) {
+            // ハイライトされたノードの場合、白色のグラデーションを設定
             gradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.7 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
           } else if (node.name === 'meta') {
+            // 'meta'ノードの場合、金色のグラデーションを設定
             gradient.addColorStop(0, `rgba(255, 215, 0, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
             gradient.addColorStop(0.5, `rgba(255, 215, 0, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
           } else if (node.type === 'directory') {
-            gradient.addColorStop(0, `rgba(0, 255, 255, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
-            gradient.addColorStop(0.5, `rgba(0, 255, 255, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
-            gradient.addColorStop(1, 'rgba(0, 255, 255, 0)');
+            // ディレクトリノードの場合、薄いシアン色のグラデーションを設定
+            gradient.addColorStop(0, `rgba(173, 216, 230, ${0.6 + Math.sin(time * 1.5) * 0.2})`);
+            gradient.addColorStop(0.5, `rgba(173, 216, 230, ${0.3 + Math.sin(time * 1.5) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(173, 216, 230, 0)');
           } else if (selectedNodesInPath.some(n => n.id === node.id)) {
+            // 選択されたパス上のノードの場合、赤色のグラデーションを設定
             gradient.addColorStop(0, `rgba(255, 0, 0, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
             gradient.addColorStop(0.5, `rgba(255, 0, 0, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
           } else {
+            // その他のノードの場合、白色のグラデーションを設定
             gradient.addColorStop(0, `rgba(255, 255, 255, ${0.8 + Math.sin(time * 1.5) * 0.2})`);
             gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.4 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -434,7 +443,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
         ctx.arc(node.x, node.y, circleRadius, 0, 2 * Math.PI);
         ctx.strokeStyle = highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) ? 'rgba(255, 255, 255, 1)' : 
                           node.name === 'meta' ? 'rgba(255, 215, 0, 0.8)' : 
-                          node.type === 'directory' ? 'rgba(0, 255, 255, 0.8)' : 
+                          node.type === 'directory' ? 'rgba(220, 230, 255, 0.9)' : // 白っぽい輝く色を使用
                           selectedNodesInPath.some(n => n.id === node.id) ? 'rgba(255, 0, 0, 0.8)' :
                           'rgba(255, 255, 255, 0.8)';
         ctx.lineWidth = highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected)) || selectedNodesInPath.some(n => n.id === node.id) ? 3 : 2;

@@ -2,19 +2,19 @@
 export const getNodeColor = (node) => {
   if (node.type === 'directory') {
     const specialDirectoryColors = {
-      'exe_history': 'rgba(255, 99, 71, 0.8)',
-      'frontend': 'rgba(255, 165, 0, 0.8)',
-      'backend': 'rgba(230, 130, 255, 0.8)',
-      'middleware': 'rgba(0, 255, 127, 0.8)',
-      'docs': 'rgba(138, 43, 226, 0.8)',
-      'tests': 'rgba(255, 20, 147, 0.8)',
-      'resources': 'rgba(0, 191, 255, 0.8)',
-      'database': 'rgba(255, 215, 0, 0.8)',
-      'logs': 'rgba(169, 169, 169, 0.8)',
-      'locales': 'rgba(0, 250, 154, 0.8)',
+      'exe_history': 'rgba(255, 99, 71, 1)',
+      'frontend': 'rgba(255, 165, 0, 1)',
+      'backend': 'rgba(230, 130, 255, 1)',
+      'middleware': 'rgba(0, 255, 127, 1)',
+      'docs': 'rgba(138, 43, 226, 1)',
+      'tests': 'rgba(255, 20, 147, 1)',
+      'resources': 'rgba(0, 191, 255, 1)',
+      'database': 'rgba(255, 215, 0, 1)',
+      'logs': 'rgba(169, 169, 169, 1)',
+      'locales': 'rgba(0, 250, 154, 1)',
       'meta': 'rgba(255, 215, 0, 1)'
     };
-    return specialDirectoryColors[node.name] || 'rgba(0, 150, 255, 0.8)';
+    return specialDirectoryColors[node.name] || 'rgba(255, 255, 255, 0.8)';
   }
   const extension = node.name.split('.').pop().toLowerCase();
   switch (extension) {
