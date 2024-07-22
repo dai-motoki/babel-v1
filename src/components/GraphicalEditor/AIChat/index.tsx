@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTranslation } from 'react-i18next';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Wrench, StopCircle } from 'lucide-react';
 import Button from '@/components/common/Button';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import TaskManager from '../TaskManager';
 import Draggable from 'react-draggable';
+import { useSearchParams } from 'next/navigation';
 
 // AIMessageインターフェースの定義
 interface AIMessage {
@@ -85,13 +85,12 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     }
   }, [messages]);
 
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const getProjectId = useCallback(() => {
     const systemParam = searchParams.get('system');
     console.log('System param from URL:', systemParam);
-    return systemParam || 'babel';
+    return systemParam;
   }, [searchParams]);
 
   // メッセージ送信処理
