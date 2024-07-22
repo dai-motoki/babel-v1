@@ -156,6 +156,8 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
       responses.forEach((response, index) => {
         const result = response.data.result[0];
         const aiMessageId = aiMessageIds[index];
+        const filePath = filePaths[index]; // この行を追加
+
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === aiMessageId
@@ -172,11 +174,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                   ...task,
                   fileProgress: {
                     ...task.fileProgress,
-                    [result.file_path]: 'completed',
+                    [filePath]: 'completed',
                   },
                   fileContents: {
                     ...task.fileContents,
-                    [result.file_path]: result.result.generated_text,
+                    [filePath]: result.result.generated_text, // この行を修正
                   },
                 }
               : task
@@ -365,6 +367,8 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
       responses.forEach((response, index) => {
         const result = response.data.result[0];
         const aiMessageId = `${taskId}-${task.relatedFiles[index]}`;
+        const filePath = task.relatedFiles[index]; // この行を追加
+
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === aiMessageId
@@ -381,11 +385,11 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
                   ...t,
                   fileProgress: {
                     ...t.fileProgress,
-                    [result.file_path]: 'completed',
+                    [filePath]: 'completed',
                   },
                   fileContents: {
                     ...t.fileContents,
-                    [result.file_path]: result.result.generated_text,
+                    [filePath]: result.result.generated_text, // この行を修正
                   },
                 }
               : t
