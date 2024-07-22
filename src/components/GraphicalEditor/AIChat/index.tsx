@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useTranslation } from 'react-i18next';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { X, Send, Loader2, CheckCircle, ChevronUp, ChevronDown, Copy, MessageSquare, Wrench, StopCircle } from 'lucide-react';
 import Button from '@/components/common/Button';
 import axios from 'axios';
@@ -84,6 +85,15 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
     }
   }, [messages]);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const getProjectId = useCallback(() => {
+    const systemParam = searchParams.get('system');
+    console.log('System param from URL:', systemParam);
+    return systemParam || 'babel';
+  }, [searchParams]);
+
   // メッセージ送信処理
   const handleSubmit = async (e: React.FormEvent, isProcessing: boolean = false) => {
     e.preventDefault();
@@ -129,15 +139,19 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         ...Object.fromEntries(aiMessageIds.map((id, index) => [id, controllers[index]]))
       }));
 
-      const responses = await Promise.all(filePaths.map((filePath, index) => 
-        axios.post(`http://localhost:8000${endpoint}`, {
+      const responses = await Promise.all(filePaths.map((filePath, index) => {
+        const requestData = {
+          project_id: getProjectId(),
           version_control: false,
           file_paths: [filePath],
           change_type: 'smart',
           execution_mode: 'parallel',
           feature_request: input,
-        }, { signal: controllers[index].signal })
-      ));
+        };
+        console.log('API request data:', requestData);
+        
+        return axios.post(`http://localhost:8000${endpoint}`, requestData, { signal: controllers[index].signal });
+      }));
 
       // レスポンス処理
       responses.forEach((response, index) => {
@@ -188,9 +202,22 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         console.log('リクエストがキャンセルされました');
       } else {
         console.error('AI response error:', error);
+        let errorMessage = t('エラーが発生しました。もう一度お試しください。');
+        
+        if (axios.isAxiosError(error) && error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+          
+          // サーバーからのエラーメッセージがある場合は表示
+          if (error.response.data && error.response.data.detail) {
+            errorMessage = `${t('サーバーエラー')}: ${error.response.data.detail}`;
+          }
+        }
+        
         setMessages((prev) => [
           ...prev,
-          { type: 'system', content: t('エラーが発生しました。もう一度お試しください。'), id: Date.now().toString() },
+          { type: 'system', content: errorMessage, id: Date.now().toString() },
         ]);
       }
     } finally {
@@ -321,15 +348,19 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         ...Object.fromEntries(task.relatedFiles.map((file, index) => [`${taskId}-${file}`, controllers[index]]))
       }));
 
-      const responses = await Promise.all(task.relatedFiles.map((filePath, index) => 
-        axios.post('http://localhost:8000/v1/ai-file-ops/multi-ai-reply', {
+      const responses = await Promise.all(task.relatedFiles.map((filePath, index) => {
+        const requestData = {
+          project_id: getProjectId(),
           version_control: false,
           file_paths: [filePath],
           change_type: 'smart',
           execution_mode: 'parallel',
           feature_request: task.name,
-        }, { signal: controllers[index].signal })
-      ));
+        };
+        console.log('Restart task request data:', requestData);
+
+        return axios.post('http://localhost:8000/v1/ai-file-ops/multi-ai-reply', requestData, { signal: controllers[index].signal });
+      }));
 
       // レスポンス処理
       responses.forEach((response, index) => {
@@ -380,9 +411,22 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         console.log('リクエストがキャンセルされました');
       } else {
         console.error('AI response error:', error);
+        let errorMessage = t('エラーが発生しました。もう一度お試しください。');
+        
+        if (axios.isAxiosError(error) && error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+          
+          // サーバーからのエラーメッセージがある場合は表示
+          if (error.response.data && error.response.data.detail) {
+            errorMessage = `${t('サーバーエラー')}: ${error.response.data.detail}`;
+          }
+        }
+        
         setMessages((prev) => [
           ...prev,
-          { type: 'system', content: t('エラーが発生しました。もう一度お試しください。'), id: Date.now().toString() },
+          { type: 'system', content: errorMessage, id: Date.now().toString() },
         ]);
       }
     } finally {
@@ -395,7 +439,7 @@ const AIChat: React.FC<AIChatProps> = ({ nodes, onClose }) => {
         });
       });
     }
-  }, [tasks, setMessages, setTasks, setPendingRequests, t]);
+  }, [tasks, setMessages, setTasks, setPendingRequests, t, getProjectId]);
 
   return (
     <div className="fixed bottom-4 right-4 flex">

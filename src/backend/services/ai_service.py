@@ -1,4 +1,3 @@
-
 import os
 from typing import List
 import asyncio
@@ -7,6 +6,7 @@ from utils.version_control import version_control
 from utils.process import process
 import subprocess
 import logging
+from utils.file_utils import get_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 async def ai_analyze(file_path: str, version_control: bool, analysis_depth: str):
-    full_path = os.path.join(BASE_PATH, file_path)
+    full_path = get_file_path("", file_path, "")
     with open(full_path, 'r') as file:
         content = file.read()
     prompt = f"以下のファイル内容を{analysis_depth}の深さで分析してください：\n\n{content}"
@@ -26,7 +26,7 @@ async def ai_analyze(file_path: str, version_control: bool, analysis_depth: str)
 async def ai_reply(file_path: str, version_control: bool, change_type: str, feature_request: str):
     # 機能追加系
     logger.info(f"ai_reply関数が呼び出されました。ファイルパス: {file_path}")
-    full_path = os.path.join(BASE_PATH, file_path)
+    full_path = get_file_path("", file_path, "")
     try:
         # ディレクトリかどうかをチェック
         if os.path.isdir(full_path):
@@ -81,7 +81,7 @@ async def multi_ai_reply(file_paths: List[str], version_control: bool, change_ty
     return results
 
 async def ai_rewrite(file_path: str, version_control: bool, rewrite_style: str):
-    full_path = os.path.join(BASE_PATH, file_path)
+    full_path = get_file_path("", file_path, "")
     with open(full_path, 'r') as file:
         content = file.read()
     prompt = f"以下のファイル内容を{rewrite_style}のスタイルで書き直してください：\n\n{content}"
@@ -91,7 +91,7 @@ async def ai_rewrite(file_path: str, version_control: bool, rewrite_style: str):
     return result
 
 async def ai_append(file_path: str, version_control: bool, append_location: str):
-    full_path = os.path.join(BASE_PATH, file_path)
+    full_path = get_file_path("", file_path, "")
     with open(full_path, 'r') as file:
         content = file.read()
     prompt = f"以下のファイル内容の{append_location}に追記してください：\n\n{content}"
@@ -103,7 +103,7 @@ async def ai_append(file_path: str, version_control: bool, append_location: str)
 async def ai_analyze_dependencies(file_paths: List[str], version_control: bool, analysis_scope: str):
     contents = []
     for file_path in file_paths:
-        full_path = os.path.join(BASE_PATH, file_path)
+        full_path = get_file_path("", file_path, "")
         with open(full_path, 'r') as file:
             contents.append(file.read())
     prompt = f"以下のファイル内容の依存関係を{analysis_scope}の範囲で分析してください：\n\n" + "\n\n".join(contents)
@@ -159,7 +159,7 @@ async def multi_ai_analyze_dependencies(file_paths: List[str], version_control: 
 
 async def ai_process(file_path: str, version_control: bool, change_type: str, feature_request: str):
     # 機能追加系
-    full_path = os.path.join(BASE_PATH, file_path)
+    full_path = get_file_path("", file_path, "")
     
     # ディレクトリかどうかをチェック
     if os.path.isdir(full_path):
@@ -192,7 +192,7 @@ async def ai_process(file_path: str, version_control: bool, change_type: str, fe
     logger.info("生成されたテキストを処理します。")
     code = process(text)
 
-    logger.info("テキスト処理が完了しました。")
+    logger.info("テスト処理が完了しました。")
     
     # 現在の日付と時刻を取得
     import datetime
