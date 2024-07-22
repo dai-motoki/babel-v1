@@ -1,37 +1,27 @@
-
 import React from 'react';
-import { MessageCircle, ListTodo } from 'lucide-react';
-import Button from '@/components/common/Button';
+import { MessageCircle, ListTodo, Eye } from 'lucide-react';
 
-interface FloatingButtonsProps {
-  setShowAIChat: (show: boolean) => void;
-  setShowTaskManager: (show: boolean) => void;
-  showAIChat: boolean;
-  showTaskManager: boolean;
-}
-
-const FloatingButtons: React.FC<FloatingButtonsProps> = ({
-  setShowAIChat,
-  setShowTaskManager,
-  showAIChat,
-  showTaskManager
-}) => {
+const FloatingButtons = ({ setShowAIChat, setShowTaskManager, setShowPreview }) => {
   return (
-    <div className="fixed bottom-4 right-4 flex flex-col space-y-2 z-50">
-      <Button
-        onClick={() => setShowAIChat(!showAIChat)}
-        className="bg-[#3c3c3c] text-[#d4d4d4] rounded-full p-2 hover:bg-[#4c4c4c] transition-all duration-200"
-        aria-label="AIチャットを表示/非表示"
+    <div className="absolute bottom-4 right-4 flex flex-col space-y-2">
+      <button
+        onClick={() => setShowAIChat(true)}
+        className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-200"
       >
-        <MessageCircle className="w-6 h-6" />
-      </Button>
-      <Button
-        onClick={() => setShowTaskManager(!showTaskManager)}
-        className="bg-[#3c3c3c] text-[#d4d4d4] rounded-full p-2 hover:bg-[#4c4c4c] transition-all duration-200"
-        aria-label="タスクマネージャーを表示/非表示"
+        <MessageCircle size={24} />
+      </button>
+      <button
+        onClick={() => setShowTaskManager(true)}
+        className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors duration-200"
       >
-        <ListTodo className="w-6 h-6" />
-      </Button>
+        <ListTodo size={24} />
+      </button>
+      <button
+        onClick={() => setShowPreview(prev => !prev)}
+        className="p-2 bg-purple-500 text-white rounded-full hover:bg-purple-600 transition-colors duration-200"
+      >
+        <Eye size={24} />
+      </button>
     </div>
   );
 };

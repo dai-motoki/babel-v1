@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { MousePointer, Box, Play } from 'lucide-react';
+import { MousePointer, Box, Play, Text } from 'lucide-react';
 import Button from '@/components/common/Button';
 import SearchBar from '../SearchBar';
 
@@ -37,9 +37,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       <div className="flex space-x-2">
         <SearchBar onSearch={onSearch} />
         <Button onClick={showAll}>{t('全て表示')}</Button>
+
+
         <Button onClick={() => setShowFileNames(!showFileNames)}>
-          {showFileNames ? t('ファイル名を非表示') : t('ファイル名を表示')}
+          <Text className="w-4 h-4" />
         </Button>
+
+        {/* <Button onClick={() => setShowFileNames(!showFileNames)}>
+          {showFileNames ? t('ファイル名を非表示') : t('ファイル名を表示')}
+        </Button> */}
 
 
         <Button onClick={toggleSelectionMode} className={isSelectionMode ? 'bg-blue-500' : ''}>

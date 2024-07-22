@@ -87,6 +87,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
   const [showTaskManager, setShowTaskManager] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [is3D, setIs3D] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     let ws: WebSocket;
@@ -133,7 +134,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 
   const [highlightedNodeGroups, setHighlightedNodeGroups] = useLocalStorage<HighlightedGroup[]>(
     `highlightedNodeGroups_${selectedSystem}`,
-    [{ id: 1, name: 'グループ1', nodes: [] }]
+    [{ id: 1, name: 'グ���ープ1', nodes: [] }]
   );
 
   const addNewHighlightGroup = useCallback(() => {
@@ -426,7 +427,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
           
           // ハイライトされたノードグループに属しているかチェック
           if (highlightedNodeGroups.some(group => group.nodes.some(n => n.id === node.id && n.isSelected))) {
-            // ハイライトされたノードの場合、白色のグラデーションを設定
+            // ハイライトされたノードの場合、��色のグラデーションを設定
             gradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(0.5, `rgba(255, 255, 255, ${0.7 + Math.sin(time * 1.5) * 0.1})`);
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -569,7 +570,7 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
 />
       <RecentChanges changes={changes} fileHistory={fileHistory} />
       <div className="flex-grow flex">
-        <div className="w-full flex flex-col">
+        <div className="w-3/4 flex flex-col">
 
           {selectedNodes.map((node) => (
             <MockEditor
@@ -615,11 +616,31 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
             />
           </div>
         </div>
+        
+        {showPreview && (
+          <div className="w-1/4 border-l border-[#3c3c3c] flex flex-col">
+            <div className="p-2 bg-[#252526] text-[#d4d4d4] flex justify-between items-center">
+              <span>プレビュー: localhost:3000</span>
+              <button
+                onClick={() => setShowPreview(false)}
+                className="text-[#d4d4d4] hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <iframe
+              src="http://localhost:3000"
+              className="flex-grow w-full"
+              title="localhost:3000 プレビュー"
+            />
+          </div>
+        )}
       </div>
 
       <FloatingButtons
         setShowAIChat={setShowAIChat}
         setShowTaskManager={setShowTaskManager}
+        setShowPreview={setShowPreview}
       />
 
       {showAIChat && (
