@@ -615,25 +615,28 @@ export const FileStructure = React.memo(({ onNodeClick, selectedSystem }) => {
               handleSelectionAction={handleSelectionAction}
             />
           </div>
+
+
         </div>
-        
         {showPreview && (
-          <div className="w-1/4 border-l border-[#3c3c3c] flex flex-col">
-            <div className="p-2 bg-[#252526] text-[#d4d4d4] flex justify-between items-center">
-              <span>プレビュー: localhost:3000</span>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="text-[#d4d4d4] hover:text-white"
-              >
-                ✕
-              </button>
+          <Draggable>
+            <div className="w-1/4 border-l border-[#3c3c3c] flex flex-col">
+              <div className="p-2 bg-[#252526] text-[#d4d4d4] flex justify-between items-center">
+                <span>プレビュー: localhost:3000</span>
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="text-[#d4d4d4] hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <iframe
+                src="http://localhost:3000"
+                className="flex-grow w-full"
+                title="localhost:3000 プレビュー"
+              />
             </div>
-            <iframe
-              src="http://localhost:3000"
-              className="flex-grow w-full"
-              title="localhost:3000 プレビュー"
-            />
-          </div>
+          </Draggable>
         )}
       </div>
 
